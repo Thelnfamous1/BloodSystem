@@ -55,7 +55,7 @@ public class BloodCapabilityProvider implements ICapabilitySerializable<Compound
     @SubscribeEvent
     public static void onClonePlayer(final PlayerEvent.Clone event) {
         event.getOriginal().reviveCaps();
-        getCapability(event.getOriginal()).ifPresent(originalCap -> getCapability(event.getEntity()).ifPresent(newCap -> newCap.copy(originalCap)));
+        getCapability(event.getOriginal()).ifPresent(originalCap -> getCapability(event.getEntity()).ifPresent(newCap -> newCap.copy(originalCap, event.isWasDeath())));
         event.getOriginal().invalidateCaps();
     }
 

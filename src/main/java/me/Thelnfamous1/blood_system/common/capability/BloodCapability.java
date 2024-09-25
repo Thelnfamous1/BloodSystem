@@ -36,12 +36,20 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
     void tick();
 
+    default void bleed(float amount){
+        this.setBlood(this.getBlood() - amount);
+    }
+
     default void invalidate(){
         this.setPlayer(null);
     }
 
-    default void copy(BloodCapability other){
-        this.deserializeNBT(other.serializeNBT());
+    default void copy(BloodCapability other, boolean death){
+        CompoundTag nbt = other.serializeNBT();
+        if(death){
+            nbt.remove(BLOOD_TAG_KEY);
+        }
+        this.deserializeNBT(nbt);
     }
 
     @Override
@@ -77,10 +85,14 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
         public void setPlayer(Player player) {
             if(this.player == null) {
                 this.player = player;
-                if(this.bloodType == null && !this.player.level.isClientSide){
-                    this.setBloodType(BloodType.getRandom(this.player.getRandom()));
+                if(!this.player.level.isClientSide){
+                    if(this.bloodType == null){ // We are a new player with no assigned blood type, so set it and set our blood to max
+                        this.setBloodType(BloodType.getRandom(this.player.getRandom()));
+                        this.setBlood(this.getMaxBlood());
+                    } else{ // We are an existing player with an assigned blood type, so just refresh our active blood loss effects
+                        this.refreshActiveBloodLossEffects();
+                    }
                 }
-                this.setBlood(this.blood);
             }
         }
 
@@ -97,16 +109,26 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
             } else{
                 this.blood = Mth.clamp(blood, 0.0F, this.getMaxBlood());
             }
-            if(lastBlood != this.blood && this.player != null && !this.player.level.isClientSide){
-                this.activeBloodLossEffects = this.getBloodLossEffects(this.getBloodPercentage());
-                BloodSystemNetwork.SYNC_CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this.player),
-                        new ClientboundSyncBlood(this.player.getId(), this.serializeNBT()));
+            if(this.blood <= 0.0F && this.player != null && !this.player.level.isClientSide){
+                this.player.kill();
             }
+            if(this.player != null && !this.player.level.isClientSide){
+                this.refreshActiveBloodLossEffects();
+                if(lastBlood != this.blood){
+                    BloodSystemNetwork.SYNC_CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this.player),
+                            new ClientboundSyncBlood(this.player.getId(), this.serializeNBT()));
+                }
+            }
+        }
+
+        private void refreshActiveBloodLossEffects() {
+            this.activeBloodLossEffects = this.getBloodLossEffects(this.getBloodPercentage());
+            BloodSystemMod.LOGGER.info("Set activeBloodLossEffects for {}: {}", this.player, this.activeBloodLossEffects.stream().map(MobEffectData::asPair).toList());
         }
 
         private List<MobEffectData> getBloodLossEffects(float bloodPercentage) {
             return BloodSystemConfig.SERVER.bloodLossEffects.get()
-                    .tailMap(bloodPercentage)
+                    .tailMap(Mth.floor(bloodPercentage))
                     .values()
                     .stream()
                     .flatMap(List::stream)
@@ -118,7 +140,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
         }
 
         public final float getBloodPercentage(){
-            return this.blood / this.getMaxBlood();
+            return (this.blood / this.getMaxBlood()) * 100;
         }
 
         @Override

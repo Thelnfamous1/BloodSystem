@@ -8,6 +8,8 @@
   "blood_type.blood_system.B-": "B-",
   "blood_type.blood_system.O+": "O+",
   "blood_type.blood_system.O-": "O-",
+  "commands.blood_system.blood.get.success": "%s has %d blood",
+  "commands.blood_system.blood.set.success": "Set the blood of %s to %d",
   "commands.blood_system.blood_type.get.success": "%s has blood type %s",
   "commands.blood_system.blood_type.set.success": "Set the blood type of %s to %s"
 }

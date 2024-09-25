@@ -4,23 +4,27 @@ import com.mojang.serialization.Codec;
 import commoble.databuddy.config.ConfigHelper;
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.codec.UnboundedNavigableMapCodec;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class BloodSystemConfig {
     public static class Server {
-        public static final Codec<NavigableMap<Float, List<MobEffectData>>> BLOOD_LOSS_EFFECTS_CODEC = new UnboundedNavigableMapCodec<>(Codec.FLOAT, Codec.list(MobEffectData.CODEC));
+        public static final Codec<NavigableMap<Integer, List<MobEffectData>>> BLOOD_LOSS_EFFECTS_CODEC = new UnboundedNavigableMapCodec<>(Codec.INT, Codec.list(MobEffectData.CODEC));
         public final ForgeConfigSpec.IntValue bloodRegenFoodLevel;
         public final ForgeConfigSpec.DoubleValue bloodRegenFrequency;
         public final ForgeConfigSpec.DoubleValue bloodRegenAmount;
         public final ForgeConfigSpec.DoubleValue bloodLossWhenTakingDamage;
         public final ForgeConfigSpec.DoubleValue bleedChanceWhenTakingDamage;
-        public final ConfigHelper.ConfigObject<NavigableMap<Float, List<MobEffectData>>> bloodLossEffects;
+        public final ForgeConfigSpec.DoubleValue bleedChanceWhenTakingDamageExtra;
+        public final ConfigHelper.ConfigObject<NavigableMap<Integer, List<MobEffectData>>> bloodLossEffects;
 
         Server(ForgeConfigSpec.Builder builder) {
             builder.comment("Server configuration settings")
@@ -30,37 +34,50 @@ public class BloodSystemConfig {
                     .comment("The food level required for passive blood regeneration to begin.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodRegenFoodLevel"))
                     .worldRestart()
-                    .defineInRange("bloodRegenFoodLevel", 10, 0, 20);
+                    .defineInRange("bloodRegenFoodLevel", 17, 0, 20);
 
             this.bloodRegenFrequency = builder
                     .comment("The frequency, in seconds, that a passive blood regeneration tick will occur.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodRegenFrequency"))
                     .worldRestart()
-                    .defineInRange("bloodRegenFrequency", 0.5, 0, 60);
+                    .defineInRange("bloodRegenFrequency", 5.0, 0, 60);
 
             this.bloodRegenAmount = builder
                     .comment("The amount of blood recovered during a passive blood regeneration tick.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodRegenAmount"))
                     .worldRestart()
-                    .defineInRange("bloodRegenAmount", 1.0D, 0, 100);
+                    .defineInRange("bloodRegenAmount", 1.0, 0, 100);
 
             this.bloodLossWhenTakingDamage = builder
                     .comment("The amount of blood lost when taking a half heart of damage or more.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodLossPerDamageTaken"))
                     .worldRestart()
-                    .defineInRange("bloodLossPerDamageTaken", 0.5, 0, 10);
+                    .defineInRange("bloodLossPerDamageTaken", 2.0, 0, 100);
 
             this.bleedChanceWhenTakingDamage = builder
                     .comment("The chance to have the Bleed status effect applied when taking a full heart of damage or more.")
                     .translation(BloodSystemMod.translationKey("configgui.bleedChanceWhenTakingDamage"))
                     .worldRestart()
-                    .defineInRange("bleedChanceWhenTakingDamage", 0.5, 0, 10);
+                    .defineInRange("bleedChanceWhenTakingDamage", 10.0, 0, 100);
+
+            this.bleedChanceWhenTakingDamageExtra = builder
+                    .comment("The additional chance, per additional full heart of damage taken, to have the Bleed status effect applied.")
+                    .translation(BloodSystemMod.translationKey("configgui.bleedChanceWhenTakingDamageExtra"))
+                    .worldRestart()
+                    .defineInRange("bleedChanceWhenTakingDamageExtra", 5.0, 0, 100);
 
             this.bloodLossEffects = ConfigHelper.defineObject(
                     builder.comment("The status effects to apply when a player's blood level is at or below these percentages.")
                             .translation(BloodSystemMod.translationKey("configgui.bloodLossEffects"))
                             .worldRestart(),
-                    "bloodLossEffects", BLOOD_LOSS_EFFECTS_CODEC, Collections.emptyNavigableMap());
+                    "bloodLossEffects", BLOOD_LOSS_EFFECTS_CODEC, new TreeMap<>(){
+                        {
+                            this.put(50, List.of(new MobEffectData(MobEffects.WEAKNESS, 0)));
+                            this.put(30, List.of(new MobEffectData(MobEffects.WEAKNESS, 1), new MobEffectData(MobEffects.DIG_SLOWDOWN, 0)));
+                            this.put(15, List.of(new MobEffectData(MobEffects.MOVEMENT_SLOWDOWN, 0)));
+                            this.put(10, List.of(new MobEffectData(MobEffects.DARKNESS, 0)));
+                        }
+                    });
 
             builder.pop();
         }
@@ -140,9 +157,24 @@ public class BloodSystemConfig {
 
     @SubscribeEvent
     public static void onLoad(final ModConfigEvent.Loading configEvent) {
+        if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
+            BloodSystemMod.LOGGER.info("Loaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
+        }
     }
 
     @SubscribeEvent
     public static void onFileChange(final ModConfigEvent.Reloading configEvent) {
+        if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
+            BloodSystemMod.LOGGER.info("Reloaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
+        }
+    }
+
+    public static Map<Integer, List<Pair<ResourceLocation, Integer>>> getLegibleBloodLossEffects() {
+        return SERVER.bloodLossEffects.get().entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().stream()
+                        .map(MobEffectData::asPair)
+                        .collect(Collectors.toList())
+        ));
     }
 }

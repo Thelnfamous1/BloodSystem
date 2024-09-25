@@ -18,6 +18,8 @@ public class BloodSystemDatagen {
                 for(BloodType bloodType : BloodType.values()){
                     this.add(bloodType.getTranslationKey(), bloodType.getSerializedName());
                 }
+                this.add(BloodSystemCommands.GET_BLOOD_SUCCESS, "%s has %d blood");
+                this.add(BloodSystemCommands.SET_BLOOD_SUCCESS, "Set the blood of %s to %d");
                 this.add(BloodSystemCommands.GET_BLOOD_TYPE_SUCCESS, "%s has blood type %s");
                 this.add(BloodSystemCommands.SET_BLOOD_TYPE_SUCCESS, "Set the blood type of %s to %s");
             }

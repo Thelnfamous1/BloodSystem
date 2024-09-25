@@ -2,6 +2,7 @@ package me.Thelnfamous1.blood_system.common.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.capability.BloodCapabilityProvider;
 import me.Thelnfamous1.blood_system.common.capability.BloodType;
@@ -15,7 +16,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.server.command.EnumArgument;
 
 public class BloodSystemCommands {
-
+    public static final String GET_BLOOD_SUCCESS = BloodSystemMod.translationKey("commands", "blood.get.success");
+    public static final String SET_BLOOD_SUCCESS = BloodSystemMod.translationKey("commands", "blood.set.success");
     public static final String GET_BLOOD_TYPE_SUCCESS = BloodSystemMod.translationKey("commands", "blood_type.get.success");
     public static final String SET_BLOOD_TYPE_SUCCESS = BloodSystemMod.translationKey("commands", "blood_type.set.success");
 
@@ -27,6 +29,28 @@ public class BloodSystemCommands {
     private static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal(BloodSystemMod.MODID)
                 .requires(stack -> stack.hasPermission(2))
+                .then(Commands.literal("blood")
+                        .then(Commands.literal("get")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(ctx -> {
+                                            Player player = EntityArgument.getPlayer(ctx, "player");
+                                            BloodCapabilityProvider.getCapability(player).ifPresent(cap -> {
+                                                ctx.getSource().sendSuccess(Component.translatable(GET_BLOOD_SUCCESS, player.getDisplayName(), cap.getBlood()), false);
+                                            });
+                                            return Command.SINGLE_SUCCESS;
+                                        })))
+                        .then(Commands.literal("set")
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .then(Commands.argument("blood", FloatArgumentType.floatArg(0.0F))
+                                                .executes(ctx -> {
+                                                    Player player = EntityArgument.getPlayer(ctx, "player");
+                                                    BloodCapabilityProvider.getCapability(player).ifPresent(cap -> {
+                                                        float blood = FloatArgumentType.getFloat(ctx, "blood");
+                                                        cap.setBlood(blood);
+                                                        ctx.getSource().sendSuccess(Component.translatable(SET_BLOOD_SUCCESS, player.getDisplayName(), blood), true);
+                                                    });
+                                                    return Command.SINGLE_SUCCESS;
+                                                })))))
                 .then(Commands.literal("blood_type")
                         .then(Commands.literal("randomize")
                                 .then(Commands.argument("player", EntityArgument.player())
