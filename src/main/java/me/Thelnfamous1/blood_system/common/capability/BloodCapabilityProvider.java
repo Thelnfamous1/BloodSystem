@@ -10,7 +10,9 @@ import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,9 +62,16 @@ public class BloodCapabilityProvider implements ICapabilitySerializable<Compound
     }
 
     @SubscribeEvent
-    public static void onClonePlayer(final TickEvent.PlayerTickEvent event) {
+    public static void onTickPlayer(final TickEvent.PlayerTickEvent event) {
         if(event.phase == TickEvent.Phase.END){
             getCapability(event.player).ifPresent(BloodCapability::tick);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onDamagePlayer(final LivingDamageEvent event) {
+        if(event.getEntity() instanceof Player player){
+            getCapability(player).ifPresent(cap -> cap.hurt(event.getAmount()));
         }
     }
 }

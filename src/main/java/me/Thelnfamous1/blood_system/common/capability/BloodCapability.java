@@ -36,8 +36,14 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
     void tick();
 
-    default void bleed(float amount){
+    void hurt(float damageAmount);
+
+    default void loseBlood(float amount){
         this.setBlood(this.getBlood() - amount);
+    }
+
+    default void gainBlood(float amount){
+        this.setBlood(this.getBlood() + amount);
     }
 
     default void invalidate(){
@@ -74,6 +80,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
     }
 
     class Implementation implements BloodCapability {
+        public static final float FULL_HEART = 2.0F;
         private float blood;
         @Nullable
         private Player player;
@@ -143,6 +150,10 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
             return (this.blood / this.getMaxBlood()) * 100;
         }
 
+        public final boolean isInjured(){
+            return this.blood < this.getMaxBlood();
+        }
+
         @Override
         @Nullable
         public BloodType getBloodType() {
@@ -160,12 +171,45 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
         @Override
         public void tick(){
-            if(this.player != null && !this.player.level.isClientSide && this.player.tickCount % 20 == 0 && !this.activeBloodLossEffects.isEmpty()){
-                for(MobEffectData bloodLossEffect : this.activeBloodLossEffects){
-                    // 21 ticks allows the effect to persist for at least 1 second before being removed and potentially re-added
-                    this.player.addEffect(new MobEffectInstance(bloodLossEffect.effect(), 21, bloodLossEffect.amplifier()));
+            if(this.player != null){
+                if(!this.player.level.isClientSide){
+                    // tick passive blood regeneration
+                    if(this.isInjured() && this.player.getFoodData().getFoodLevel() >= BloodSystemConfig.SERVER.bloodRegenMinFoodLevel.get()){
+                        int bloodRegenFreqInTicks = Mth.floor(BloodSystemConfig.SERVER.bloodRegenFrequency.get() * 20);
+                        if(bloodRegenFreqInTicks > 0 && this.player.tickCount % bloodRegenFreqInTicks == 0){
+                            this.gainBlood(BloodSystemConfig.SERVER.bloodRegenAmount.get().floatValue());
+                            BloodSystemMod.LOGGER.info("{} regenerated {} blood!", this.player, BloodSystemConfig.SERVER.bloodRegenAmount.get().floatValue());
+                        }
+                    }
+                    // add active blood loss effects
+                    if(this.player.tickCount % 20 == 0 && !this.activeBloodLossEffects.isEmpty()){
+                        for(MobEffectData bloodLossEffect : this.activeBloodLossEffects){
+                            // 21 ticks allows the effect to persist for at least 1 second before being removed and potentially re-added
+                            this.player.addEffect(new MobEffectInstance(bloodLossEffect.effect(), 21, bloodLossEffect.amplifier()));
+                        }
+                    }
                 }
             }
         }
+
+        @Override
+        public void hurt(float damageAmount) {
+            if(this.player != null && !this.player.level.isClientSide){
+                if(damageAmount >= 1.0F){
+                    this.loseBlood(BloodSystemConfig.SERVER.bloodLossWhenTakingDamage.get().floatValue());
+                    BloodSystemMod.LOGGER.info("{} lost {} blood!", this.player, BloodSystemConfig.SERVER.bloodLossWhenTakingDamage.get().floatValue());
+
+                }
+                if(damageAmount >= FULL_HEART){
+                    float additionalDamageInFullHearts = (damageAmount - FULL_HEART) / FULL_HEART;
+                    double additionalBleedChance = Math.max(0.0D, additionalDamageInFullHearts) * BloodSystemConfig.SERVER.bleedChanceWhenTakingDamageExtra.get();
+                    double chance = BloodSystemConfig.SERVER.bleedChanceWhenTakingDamage.get() + additionalBleedChance;
+                    if(this.player.getRandom().nextDouble() * 100.0F <= chance){
+                        BloodSystemMod.LOGGER.info("{} now has the bleed status effect!", this.player);
+                    }
+                }
+            }
+        }
+
     }
 }

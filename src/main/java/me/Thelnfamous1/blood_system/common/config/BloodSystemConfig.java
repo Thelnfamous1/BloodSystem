@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public class BloodSystemConfig {
     public static class Server {
         public static final Codec<NavigableMap<Integer, List<MobEffectData>>> BLOOD_LOSS_EFFECTS_CODEC = new UnboundedNavigableMapCodec<>(Codec.INT, Codec.list(MobEffectData.CODEC));
-        public final ForgeConfigSpec.IntValue bloodRegenFoodLevel;
+        public final ForgeConfigSpec.IntValue bloodRegenMinFoodLevel;
         public final ForgeConfigSpec.DoubleValue bloodRegenFrequency;
         public final ForgeConfigSpec.DoubleValue bloodRegenAmount;
         public final ForgeConfigSpec.DoubleValue bloodLossWhenTakingDamage;
@@ -30,14 +30,14 @@ public class BloodSystemConfig {
             builder.comment("Server configuration settings")
                    .push("server");
 
-            this.bloodRegenFoodLevel = builder
-                    .comment("The food level required for passive blood regeneration to begin.")
-                    .translation(BloodSystemMod.translationKey("configgui.bloodRegenFoodLevel"))
+            this.bloodRegenMinFoodLevel = builder
+                    .comment("The minimum food level required for passive blood regeneration to begin.")
+                    .translation(BloodSystemMod.translationKey("configgui.bloodRegenMinFoodLevel"))
                     .worldRestart()
-                    .defineInRange("bloodRegenFoodLevel", 17, 0, 20);
+                    .defineInRange("bloodRegenMinFoodLevel", 17, 0, 20);
 
             this.bloodRegenFrequency = builder
-                    .comment("The frequency, in seconds, that a passive blood regeneration tick will occur.")
+                    .comment("The frequency, in seconds, that a passive blood regeneration tick will occur. A value of 0.05 or less will prevent passive blood regeneration.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodRegenFrequency"))
                     .worldRestart()
                     .defineInRange("bloodRegenFrequency", 5.0, 0, 60);
