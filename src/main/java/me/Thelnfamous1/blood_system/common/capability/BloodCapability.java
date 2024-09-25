@@ -138,7 +138,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
         @Override
         public void tick(){
-            if(this.player != null && !this.player.level.isClientSide && !this.activeBloodLossEffects.isEmpty()){
+            if(this.player != null && !this.player.level.isClientSide && this.player.tickCount % 20 == 0 && !this.activeBloodLossEffects.isEmpty()){
                 for(MobEffectData bloodLossEffect : this.activeBloodLossEffects){
                     // 21 ticks allows the effect to persist for at least 1 second before being removed and potentially re-added
                     this.player.addEffect(new MobEffectInstance(bloodLossEffect.effect(), 21, bloodLossEffect.amplifier()));
