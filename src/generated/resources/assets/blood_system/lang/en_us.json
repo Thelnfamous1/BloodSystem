@@ -1,0 +1,13 @@
+{
+  "attribute.blood_system.max_blood": "Max Blood",
+  "blood_type.blood_system.A+": "A+",
+  "blood_type.blood_system.A-": "A-",
+  "blood_type.blood_system.AB+": "AB+",
+  "blood_type.blood_system.AB-": "AB-",
+  "blood_type.blood_system.B+": "B+",
+  "blood_type.blood_system.B-": "B-",
+  "blood_type.blood_system.O+": "O+",
+  "blood_type.blood_system.O-": "O-",
+  "commands.blood_system.blood_type.get.success": "%s has blood type %s",
+  "commands.blood_system.blood_type.set.success": "Set the blood type of %s to %s"
+}

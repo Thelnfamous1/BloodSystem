@@ -3,7 +3,9 @@
   "package": "me.Thelnfamous1.blood_system.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "blood_system.refmap.json",
-  "mixins": [],
+  "mixins": [
+    "TomlConfigOpsMixin"
+  ],
   "client": [],
   "minVersion": "0.8.5"
 }
