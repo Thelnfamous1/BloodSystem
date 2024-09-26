@@ -219,7 +219,7 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
     implementation fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}")
-    shade fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}")
+    shade fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}:config")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -243,16 +243,6 @@ processResources {
     }
 }
 
-shadowJar {
-    archiveClassifier = ''
-    configurations = [project.configurations.shade]
-    relocate 'commoble.databuddy', "${project.group}.shadow.commoble.databuddy"
-}
-
-reobf {
-    shadowJar { }
-}
-
 // Example for how to get properties into the manifest for reading at runtime.
 jar {
     manifest {
@@ -270,6 +260,21 @@ jar {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+shadowJar {
+    archiveClassifier = ''
+    configurations = [project.configurations.shade]
+    relocate 'commoble.databuddy', "${project.group}.shadow.commoble.databuddy"
+}
+
+reobf {
+    shadowJar { }
+}
+tasks.configureEach {
+    if (name == "reobfJar") {
+        mustRunAfter(tasks.shadowJar)
+    }
 }
 
 // this replaces jar.finalizedBy('reobfJar') in the standard forge mod buildscript
