@@ -4,21 +4,21 @@ import com.mojang.serialization.Codec;
 import net.minecraft.util.StringRepresentable;
 
 public enum RenderCorner implements StringRepresentable {
-    TOP_LEFT("top_left", 1, 1),
-    TOP_RIGHT("top_right", -1, 1),
-    BOTTOM_LEFT("bottom_left", 1, -1),
-    BOTTOM_RIGHT("bottom_right", -1, -1);
+    TOP_LEFT("top_left", true, true),
+    TOP_RIGHT("top_right", true, false),
+    BOTTOM_LEFT("bottom_left", false, true),
+    BOTTOM_RIGHT("bottom_right", false, false);
 
     public static final Codec<RenderCorner> CODEC = StringRepresentable.fromEnum(RenderCorner::values);
 
     private final String name;
-    private final int xScale;
-    private final int yScale;
+    private final boolean top;
+    private final boolean left;
 
-    RenderCorner(String name, int xScale, int yScale) {
+    RenderCorner(String name, boolean top, boolean left) {
         this.name = name;
-        this.xScale = xScale;
-        this.yScale = yScale;
+        this.top = top;
+        this.left = left;
     }
 
     @Override
@@ -26,11 +26,19 @@ public enum RenderCorner implements StringRepresentable {
         return this.name;
     }
 
-    public int scaleXOffset(int xOffset){
-        return xOffset * this.xScale;
+    public int getXPos(int xOffset, int screenWidth){
+        if(this.left){
+            return xOffset;
+        } else{
+            return screenWidth - xOffset;
+        }
     }
 
-    public int scaleYOffset(int yOffset){
-        return yOffset * this.yScale;
+    public int getYPos(int yOffset, int screenHeight){
+        if(this.top){
+            return yOffset;
+        } else{
+            return screenHeight - yOffset;
+        }
     }
 }

@@ -5,6 +5,7 @@ import me.Thelnfamous1.blood_system.common.config.BloodSystemConfig;
 import me.Thelnfamous1.blood_system.common.config.MobEffectData;
 import me.Thelnfamous1.blood_system.common.network.BloodSystemNetwork;
 import me.Thelnfamous1.blood_system.common.network.ClientboundSyncBlood;
+import me.Thelnfamous1.blood_system.common.util.DebugFlags;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
@@ -28,6 +29,12 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
     float getBlood();
 
     void setBlood(float blood);
+
+    float getMaxBlood();
+
+    default float getBloodRatio(){
+        return this.getBlood() / this.getMaxBlood();
+    }
 
     @Nullable
     BloodType getBloodType();
@@ -130,7 +137,8 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
         private void refreshActiveBloodLossEffects() {
             this.activeBloodLossEffects = this.getBloodLossEffects(this.getBloodPercentage());
-            BloodSystemMod.LOGGER.info("Set activeBloodLossEffects for {}: {}", this.player, this.activeBloodLossEffects.stream().map(MobEffectData::asPair).toList());
+            if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
+                BloodSystemMod.LOGGER.info("Set activeBloodLossEffects for {}: {}", this.player, this.activeBloodLossEffects.stream().map(MobEffectData::asPair).toList());
         }
 
         private List<MobEffectData> getBloodLossEffects(float bloodPercentage) {
@@ -142,12 +150,13 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
                     .toList();
         }
 
+        @Override
         public final float getMaxBlood() {
             return (float)this.player.getAttributeValue(BloodSystemMod.MAX_BLOOD.get());
         }
 
         public final float getBloodPercentage(){
-            return (this.blood / this.getMaxBlood()) * 100;
+            return this.getBloodRatio() * 100;
         }
 
         public final boolean isInjured(){
@@ -174,11 +183,15 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
             if(this.player != null){
                 if(!this.player.level.isClientSide){
                     // tick passive blood regeneration
-                    if(this.isInjured() && this.player.getFoodData().getFoodLevel() >= BloodSystemConfig.SERVER.bloodRegenMinFoodLevel.get()){
+                    float bloodRegenAmount = this.getBloodRegenAmount();
+                    if(this.isInjured()
+                            && this.hasEnoughFoodToRegenBlood()
+                            && bloodRegenAmount > 0){
                         int bloodRegenFreqInTicks = Mth.floor(BloodSystemConfig.SERVER.bloodRegenFrequency.get() * 20);
-                        if(bloodRegenFreqInTicks > 0 && this.player.tickCount % bloodRegenFreqInTicks == 0){
-                            this.gainBlood(BloodSystemConfig.SERVER.bloodRegenAmount.get().floatValue());
-                            BloodSystemMod.LOGGER.info("{} regenerated {} blood!", this.player, BloodSystemConfig.SERVER.bloodRegenAmount.get().floatValue());
+                        if(bloodRegenFreqInTicks <= 0 || this.player.tickCount % bloodRegenFreqInTicks == 0){
+                            this.gainBlood(bloodRegenAmount);
+                            if(DebugFlags.DEBUG_PASSIVE_BLOOD_REGENERATION)
+                                BloodSystemMod.LOGGER.info("{} regenerated {} blood!", this.player, bloodRegenAmount);
                         }
                     }
                     // add active blood loss effects
@@ -192,12 +205,27 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
             }
         }
 
+        private float getBloodRegenAmount() {
+            float bloodRegenAmount = BloodSystemConfig.SERVER.bloodRegenAmount.get().floatValue();
+            if(this.player.hasEffect(BloodSystemMod.BLEEDING.get())){
+                bloodRegenAmount = 0.0F;
+            } else if(this.player.hasEffect(BloodSystemMod.CIRCULATION.get())){
+                bloodRegenAmount += 4.0F;
+            }
+            return bloodRegenAmount;
+        }
+
+        private boolean hasEnoughFoodToRegenBlood() {
+            return this.player.getFoodData().getFoodLevel() >= BloodSystemConfig.SERVER.bloodRegenMinFoodLevel.get();
+        }
+
         @Override
         public void hurt(float damageAmount) {
             if(this.player != null && !this.player.level.isClientSide){
                 if(damageAmount >= 1.0F){
                     this.loseBlood(BloodSystemConfig.SERVER.bloodLossWhenTakingDamage.get().floatValue());
-                    BloodSystemMod.LOGGER.info("{} lost {} blood!", this.player, BloodSystemConfig.SERVER.bloodLossWhenTakingDamage.get().floatValue());
+                    if(DebugFlags.DEBUG_BLOOD_LOSS_TAKEN_DAMAGE)
+                        BloodSystemMod.LOGGER.info("{} lost {} blood!", this.player, BloodSystemConfig.SERVER.bloodLossWhenTakingDamage.get().floatValue());
 
                 }
                 if(damageAmount >= FULL_HEART){
@@ -205,7 +233,9 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
                     double additionalBleedChance = Math.max(0.0D, additionalDamageInFullHearts) * BloodSystemConfig.SERVER.bleedChanceWhenTakingDamageExtra.get();
                     double chance = BloodSystemConfig.SERVER.bleedChanceWhenTakingDamage.get() + additionalBleedChance;
                     if(this.player.getRandom().nextDouble() * 100.0F <= chance){
-                        BloodSystemMod.LOGGER.info("{} now has the bleed status effect!", this.player);
+                        this.player.addEffect(new MobEffectInstance(BloodSystemMod.BLEEDING.get(), Integer.MAX_VALUE));
+                        if(DebugFlags.DEBUG_BLOOD_LOSS_TAKEN_DAMAGE)
+                            BloodSystemMod.LOGGER.info("{} now has the bleed status effect!", this.player);
                     }
                 }
             }

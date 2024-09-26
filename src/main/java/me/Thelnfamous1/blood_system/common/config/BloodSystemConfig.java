@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import commoble.databuddy.config.ConfigHelper;
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.codec.UnboundedNavigableMapCodec;
+import me.Thelnfamous1.blood_system.common.util.DebugFlags;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -37,7 +38,7 @@ public class BloodSystemConfig {
                     .defineInRange("bloodRegenMinFoodLevel", 17, 0, 20);
 
             this.bloodRegenFrequency = builder
-                    .comment("The frequency, in seconds, that a passive blood regeneration tick will occur. A value of 0.05 or less will prevent passive blood regeneration.")
+                    .comment("The frequency, in seconds, that a passive blood regeneration tick will occur. A value of 0.05 or less will cause passive blood regeneration every tick.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodRegenFrequency"))
                     .worldRestart()
                     .defineInRange("bloodRegenFrequency", 5.0, 0, 60);
@@ -118,12 +119,12 @@ public class BloodSystemConfig {
             this.bloodMeterXOffset = builder
                 .comment("The amount of pixels to offset the x-coordinate of the top-left corner of the blood meter from the configured bloodMeterRenderCorner value.")
                 .translation(BloodSystemMod.translationKey("configgui.bloodMeterXOffset"))
-                .defineInRange("bloodMeterXOffset", 32, 0, Integer.MAX_VALUE);
+                .defineInRange("bloodMeterXOffset", 33, 0, Integer.MAX_VALUE);
 
             this.bloodMeterYOffset = builder
                     .comment("The amount of pixels to offset the y-coordinate of the top-left corner of the blood meter from the configured bloodMeterRenderCorner value.")
                     .translation(BloodSystemMod.translationKey("configgui.bloodMeterYOffset"))
-                    .defineInRange("bloodMeterYOffset", 32, 0, Integer.MAX_VALUE);
+                    .defineInRange("bloodMeterYOffset", 33, 0, Integer.MAX_VALUE);
 
             builder.pop();
         }
@@ -158,14 +159,16 @@ public class BloodSystemConfig {
     @SubscribeEvent
     public static void onLoad(final ModConfigEvent.Loading configEvent) {
         if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
-            BloodSystemMod.LOGGER.info("Loaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
+            if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
+                BloodSystemMod.LOGGER.info("Loaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
         }
     }
 
     @SubscribeEvent
     public static void onFileChange(final ModConfigEvent.Reloading configEvent) {
         if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
-            BloodSystemMod.LOGGER.info("Reloaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
+            if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
+                BloodSystemMod.LOGGER.info("Reloaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
         }
     }
 
