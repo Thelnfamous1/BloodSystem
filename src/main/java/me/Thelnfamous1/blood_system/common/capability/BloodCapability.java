@@ -5,10 +5,13 @@ import me.Thelnfamous1.blood_system.common.config.BloodSystemConfig;
 import me.Thelnfamous1.blood_system.common.config.MobEffectData;
 import me.Thelnfamous1.blood_system.common.network.BloodSystemNetwork;
 import me.Thelnfamous1.blood_system.common.network.ClientboundSyncBlood;
+import me.Thelnfamous1.blood_system.common.registries.ModAttributes;
+import me.Thelnfamous1.blood_system.common.registries.ModMobEffects;
 import me.Thelnfamous1.blood_system.common.util.DebugFlags;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
@@ -43,7 +46,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
     void tick();
 
-    void hurt(float damageAmount);
+    void hurt(DamageSource source, float damageAmount);
 
     default void loseBlood(float amount){
         this.setBlood(this.getBlood() - amount);
@@ -156,7 +159,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
         @Override
         public final float getMaxBlood() {
-            return (float)this.player.getAttributeValue(BloodSystemMod.MAX_BLOOD.get());
+            return (float)this.player.getAttributeValue(ModAttributes.MAX_BLOOD.get());
         }
 
         public final float getBloodPercentage(){
@@ -216,9 +219,9 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
 
         private float getBloodRegenAmount() {
             float bloodRegenAmount = BloodSystemConfig.SERVER.bloodRegenAmount.get().floatValue();
-            if(this.player.hasEffect(BloodSystemMod.BLEEDING.get())){
+            if(this.player.hasEffect(ModMobEffects.BLEEDING.get())){
                 bloodRegenAmount = 0.0F;
-            } else if(this.player.hasEffect(BloodSystemMod.CIRCULATION.get())){
+            } else if(this.player.hasEffect(ModMobEffects.CIRCULATION.get())){
                 bloodRegenAmount += 4.0F;
             }
             return bloodRegenAmount;
@@ -229,8 +232,8 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
         }
 
         @Override
-        public void hurt(float damageAmount) {
-            if(this.player != null && !this.player.level.isClientSide){
+        public void hurt(DamageSource source, float damageAmount) {
+            if(this.player != null && !this.player.level.isClientSide && (!this.player.getAbilities().invulnerable || source.isBypassInvul())){
                 if(damageAmount >= 1.0F){
                     this.loseBlood(BloodSystemConfig.SERVER.bloodLossWhenTakingDamage.get().floatValue());
                     if(DebugFlags.DEBUG_BLOOD_LOSS_TAKEN_DAMAGE)
@@ -242,7 +245,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
                     double additionalBleedChance = Math.max(0.0D, additionalDamageInFullHearts) * BloodSystemConfig.SERVER.bleedChanceWhenTakingDamageExtra.get();
                     double chance = BloodSystemConfig.SERVER.bleedChanceWhenTakingDamage.get() + additionalBleedChance;
                     if(this.player.getRandom().nextDouble() * 100.0F <= chance){
-                        this.player.addEffect(new MobEffectInstance(BloodSystemMod.BLEEDING.get(), Integer.MAX_VALUE));
+                        this.player.addEffect(new MobEffectInstance(ModMobEffects.BLEEDING.get(), Integer.MAX_VALUE));
                         if(DebugFlags.DEBUG_BLOOD_LOSS_TAKEN_DAMAGE)
                             BloodSystemMod.LOGGER.info("{} now has the bleed status effect!", this.player);
                     }

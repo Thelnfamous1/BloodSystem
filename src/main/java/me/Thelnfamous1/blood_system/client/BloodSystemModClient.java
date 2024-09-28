@@ -4,6 +4,7 @@ import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.item.BloodFillableItem;
 import me.Thelnfamous1.blood_system.common.network.BloodSystemNetwork;
 import me.Thelnfamous1.blood_system.common.network.ServerboundRequestBloodSync;
+import me.Thelnfamous1.blood_system.common.registries.ModItems;
 import me.Thelnfamous1.blood_system.common.util.DebugFlags;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -39,9 +40,9 @@ public class BloodSystemModClient {
     public static class ModloadingEvents{
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.SYRINGE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
-            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.BLOOD_BAG.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
-            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.BLOOD_BAG_AND_NEEDLE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
+            event.enqueueWork(() -> ItemProperties.register(ModItems.SYRINGE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
+            event.enqueueWork(() -> ItemProperties.register(ModItems.BLOOD_BAG.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
+            event.enqueueWork(() -> ItemProperties.register(ModItems.BLOOD_BAG_AND_NEEDLE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
         }
 
         private static float getBloodFilled(ItemStack pStack, ClientLevel level, LivingEntity entity, long seed) {

@@ -4,6 +4,7 @@ import me.Thelnfamous1.blood_system.common.capability.BloodCapability;
 import me.Thelnfamous1.blood_system.common.capability.BloodCapabilityProvider;
 import me.Thelnfamous1.blood_system.common.capability.BloodType;
 import me.Thelnfamous1.blood_system.common.util.CustomTooltipFlag;
+import me.Thelnfamous1.blood_system.mixin.LivingEntityAccessor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -12,9 +13,9 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
@@ -34,7 +35,7 @@ public abstract class BloodFillableItem extends Item {
     }
 
     public static void createAndGiveFilledContainer(ItemStack pStack, Player player, @Nullable BloodType bloodType) {
-        if(player.isCreative()){
+        if(player.getAbilities().instabuild){
             pStack = pStack.copy();
         }
         ItemStack split = pStack.split(1);
@@ -122,8 +123,8 @@ public abstract class BloodFillableItem extends Item {
         }
     }
 
-    protected void playInjectionStartSound(Level pLevel, Player player, InteractionHand hand, ItemStack stack) {
-        pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
+    protected void playInjectionStartSound(Level pLevel, LivingEntity user, InteractionHand hand, ItemStack stack) {
+        pLevel.playSound(null, user.getX(), user.getY(), user.getZ(), ((LivingEntityAccessor)user).blood_system$callGetHurtSound(DamageSource.GENERIC), user.getSoundSource(), 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
     }
 
     @Override
@@ -136,15 +137,31 @@ public abstract class BloodFillableItem extends Item {
     }
 
     @Override
+    public void releaseUsing(ItemStack pStack, Level pLevel, LivingEntity pLivingEntity, int useItemRemaining) {
+        if(this.useOnRelease(pStack)){
+            int useDuration = this.getUseDuration(pStack);
+            int useTime = useDuration - useItemRemaining;
+            if(useTime / useDuration >= 1){
+                this.completeUsing(pStack, pLevel, pLivingEntity);
+            }
+        }
+    }
+
+    @Override
     public ItemStack finishUsingItem(ItemStack pStack, Level pLevel, LivingEntity pLivingEntity) {
+        this.completeUsing(pStack, pLevel, pLivingEntity);
+        return pStack;
+    }
+
+    protected void completeUsing(ItemStack pStack, Level pLevel, LivingEntity pLivingEntity) {
         if(this.isUseable()){
             if(pLivingEntity instanceof Player player){
-                this.playInjectionFinishSound(pLevel, player, player.getUsedItemHand(), pStack);
                 if(!pLevel.isClientSide){
                     BloodCapabilityProvider.getCapability(player).ifPresent(cap -> {
                         BloodType playerBloodType = cap.getBloodType();
                         getStoredBloodType(pStack).ifPresentOrElse(bt -> {
                             createAndGiveEmptyContainer(pStack, player);
+                            this.playInjectionFinishSound(pLevel, pLivingEntity, pLivingEntity.getUsedItemHand(), pStack);
                             if(bt.canDonateTo(playerBloodType)){
                                 this.injectCompatibleBlood(player, cap);
                             } else{
@@ -152,17 +169,22 @@ public abstract class BloodFillableItem extends Item {
                             }
                         }, () -> {
                             createAndGiveFilledContainer(pStack, player, playerBloodType);
+                            this.playExtractionFinishSound(pLevel, pLivingEntity, pLivingEntity.getUsedItemHand(), pStack);
                             this.extractBlood(player, cap);
                         });
                     });
+                    this.onUseCompleted(pStack, pLevel, player);
                 }
             }
         }
-        return pStack;
     }
 
-    protected void playInjectionFinishSound(Level pLevel, Player player, InteractionHand hand, ItemStack stack) {
-        pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BOTTLE_FILL, SoundSource.PLAYERS, 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
+    protected void playInjectionFinishSound(Level pLevel, LivingEntity user, InteractionHand hand, ItemStack stack) {
+        pLevel.playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.BOTTLE_EMPTY, user.getSoundSource(), 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
+    }
+
+    protected void playExtractionFinishSound(Level pLevel, LivingEntity user, InteractionHand hand, ItemStack stack) {
+        pLevel.playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.BOTTLE_FILL, user.getSoundSource(), 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
     }
 
     protected void injectIncompatibleBlood(Player player, BloodCapability cap) {
@@ -175,6 +197,10 @@ public abstract class BloodFillableItem extends Item {
     }
 
     protected void injectCompatibleBlood(Player player, BloodCapability cap) {
+    }
+
+    protected void onUseCompleted(ItemStack stack, Level pLevel, Player player) {
+        player.getCooldowns().addCooldown(stack.getItem(), 10);
     }
 
     @Override

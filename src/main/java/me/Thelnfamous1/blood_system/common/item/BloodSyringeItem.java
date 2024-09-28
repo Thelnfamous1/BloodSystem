@@ -21,7 +21,9 @@ public class BloodSyringeItem extends BloodFillableItem {
     }
 
     protected void extractBlood(Player player, BloodCapability cap) {
-        cap.loseBlood(getContainableBlood());
+        if(!player.getAbilities().invulnerable){
+            cap.loseBlood(getContainableBlood());
+        }
     }
 
     private static float getContainableBlood() {

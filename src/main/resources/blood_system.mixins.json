@@ -5,6 +5,7 @@
   "refmap": "blood_system.refmap.json",
   "mixins": [
     "ItemStackMixin",
+    "LivingEntityAccessor",
     "TomlConfigOpsMixin"
   ],
   "client": [

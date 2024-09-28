@@ -71,7 +71,7 @@ public class BloodCapabilityProvider implements ICapabilitySerializable<Compound
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onDamagePlayer(final LivingDamageEvent event) {
         if(event.getEntity() instanceof Player player){
-            getCapability(player).ifPresent(cap -> cap.hurt(event.getAmount()));
+            getCapability(player).ifPresent(cap -> cap.hurt(event.getSource(), event.getAmount()));
         }
     }
 }
