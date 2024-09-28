@@ -2,13 +2,13 @@
   "parent": "minecraft:item/generated",
   "overrides": [
     {
-      "model": "blood_system:item/blood_bag_filled",
+      "model": "blood_system:item/blood_bag_and_needle_filled",
       "predicate": {
         "blood_system:blood_filled": 1.0
       }
     }
   ],
   "textures": {
-    "layer0": "blood_system:item/blood_bag"
+    "layer0": "blood_system:item/blood_bag_and_needle"
   }
 }

@@ -71,7 +71,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
         tag.putFloat(BLOOD_TAG_KEY, this.getBlood());
         BloodType bloodType = this.getBloodType();
         if(bloodType != null){
-            tag.putByte(BLOOD_TYPE_TAG_KEY, (byte) bloodType.ordinal());
+            tag.putString(BLOOD_TYPE_TAG_KEY, bloodType.getSerializedName());
         }
         return tag;
     }
@@ -81,9 +81,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
         if(nbt.contains(BLOOD_TAG_KEY, Tag.TAG_FLOAT)){
             this.setBlood(nbt.getFloat(BLOOD_TAG_KEY));
         }
-        if(nbt.contains(BLOOD_TYPE_TAG_KEY, Tag.TAG_BYTE)){
-            this.setBloodType(BloodType.byOrdinal(nbt.getByte(BLOOD_TYPE_TAG_KEY)));
-        }
+        this.setBloodType(BloodType.read(nbt, BLOOD_TYPE_TAG_KEY));
     }
 
     class Implementation implements BloodCapability {
@@ -124,7 +122,7 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
                 this.blood = Mth.clamp(blood, 0.0F, this.getMaxBlood());
             }
             if(this.blood <= 0.0F && this.player != null && !this.player.level.isClientSide){
-                this.player.kill();
+                this.killFromBloodLoss();
             }
             if(this.player != null && !this.player.level.isClientSide){
                 this.refreshActiveBloodLossEffects();
@@ -132,6 +130,12 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
                     BloodSystemNetwork.SYNC_CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this.player),
                             new ClientboundSyncBlood(this.player.getId(), this.serializeNBT()));
                 }
+            }
+        }
+
+        private void killFromBloodLoss() {
+            if(!this.player.getAbilities().invulnerable){
+                this.player.kill();
             }
         }
 
@@ -182,6 +186,11 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
         public void tick(){
             if(this.player != null){
                 if(!this.player.level.isClientSide){
+                    // check if the player should be dead
+                    if(this.blood <= 0.0F && !this.player.isRemoved()){
+                        this.killFromBloodLoss();
+                    }
+
                     // tick passive blood regeneration
                     float bloodRegenAmount = this.getBloodRegenAmount();
                     if(this.isInjured()

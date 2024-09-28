@@ -33,43 +33,43 @@ public class BloodSystemConfig {
 
             this.bloodRegenMinFoodLevel = builder
                     .comment("The minimum food level required for passive blood regeneration to begin.")
-                    .translation(BloodSystemMod.translationKey("configgui.bloodRegenMinFoodLevel"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodRegenMinFoodLevel"))
                     .worldRestart()
                     .defineInRange("bloodRegenMinFoodLevel", 17, 0, 20);
 
             this.bloodRegenFrequency = builder
                     .comment("The frequency, in seconds, that a passive blood regeneration tick will occur. A value of 0.05 or less will cause passive blood regeneration every tick.")
-                    .translation(BloodSystemMod.translationKey("configgui.bloodRegenFrequency"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodRegenFrequency"))
                     .worldRestart()
                     .defineInRange("bloodRegenFrequency", 5.0, 0, 60);
 
             this.bloodRegenAmount = builder
                     .comment("The amount of blood recovered during a passive blood regeneration tick.")
-                    .translation(BloodSystemMod.translationKey("configgui.bloodRegenAmount"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodRegenAmount"))
                     .worldRestart()
                     .defineInRange("bloodRegenAmount", 1.0, 0, 100);
 
             this.bloodLossWhenTakingDamage = builder
                     .comment("The amount of blood lost when taking a half heart of damage or more.")
-                    .translation(BloodSystemMod.translationKey("configgui.bloodLossPerDamageTaken"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodLossPerDamageTaken"))
                     .worldRestart()
                     .defineInRange("bloodLossPerDamageTaken", 2.0, 0, 100);
 
             this.bleedChanceWhenTakingDamage = builder
                     .comment("The chance to have the Bleed status effect applied when taking a full heart of damage or more.")
-                    .translation(BloodSystemMod.translationKey("configgui.bleedChanceWhenTakingDamage"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bleedChanceWhenTakingDamage"))
                     .worldRestart()
                     .defineInRange("bleedChanceWhenTakingDamage", 10.0, 0, 100);
 
             this.bleedChanceWhenTakingDamageExtra = builder
                     .comment("The additional chance, per additional full heart of damage taken, to have the Bleed status effect applied.")
-                    .translation(BloodSystemMod.translationKey("configgui.bleedChanceWhenTakingDamageExtra"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bleedChanceWhenTakingDamageExtra"))
                     .worldRestart()
                     .defineInRange("bleedChanceWhenTakingDamageExtra", 5.0, 0, 100);
 
             this.bloodLossEffects = ConfigHelper.defineObject(
                     builder.comment("The status effects to apply when a player's blood level is at or below these percentages.")
-                            .translation(BloodSystemMod.translationKey("configgui.bloodLossEffects"))
+                            .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodLossEffects"))
                             .worldRestart(),
                     "bloodLossEffects", BLOOD_LOSS_EFFECTS_CODEC, new TreeMap<>(){
                         {
@@ -113,17 +113,17 @@ public class BloodSystemConfig {
             this.bloodMeterRenderCorner = ConfigHelper.defineObject(
                     builder
                             .comment("The corner of the screen to offset the top-left corner of the blood meter from.")
-                            .translation(BloodSystemMod.translationKey("configgui.bloodMeterRenderCorner")),
+                            .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodMeterRenderCorner")),
                     "bloodMeterRenderCorner", RenderCorner.CODEC, RenderCorner.BOTTOM_RIGHT);
 
             this.bloodMeterXOffset = builder
                 .comment("The amount of pixels to offset the x-coordinate of the top-left corner of the blood meter from the configured bloodMeterRenderCorner value.")
-                .translation(BloodSystemMod.translationKey("configgui.bloodMeterXOffset"))
+                .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodMeterXOffset"))
                 .defineInRange("bloodMeterXOffset", 33, 0, Integer.MAX_VALUE);
 
             this.bloodMeterYOffset = builder
                     .comment("The amount of pixels to offset the y-coordinate of the top-left corner of the blood meter from the configured bloodMeterRenderCorner value.")
-                    .translation(BloodSystemMod.translationKey("configgui.bloodMeterYOffset"))
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodMeterYOffset"))
                     .defineInRange("bloodMeterYOffset", 33, 0, Integer.MAX_VALUE);
 
             builder.pop();

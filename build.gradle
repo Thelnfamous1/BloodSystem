@@ -176,6 +176,9 @@ repositories {
     // }
     // java repo to get databuddy from
     maven { url "https://commoble.net/maven/" }
+    // Repo to get Fabric's Mixin Annotation Processor from
+    maven { url "https://maven.fabricmc.net/"}
+    mavenCentral()
 }
 
 configurations {
@@ -201,7 +204,9 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     // Mixin annotation processor - generates the refmap
-    annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
+    //annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
+    annotationProcessor "net.fabricmc:sponge-mixin:0.12.5+mixin.${mixin_version}"
+
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
@@ -220,6 +225,10 @@ dependencies {
 
     implementation fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}")
     shade fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}:config")
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixin_extra_version}")) {
+        jarJar.ranged(it, "[,)")
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

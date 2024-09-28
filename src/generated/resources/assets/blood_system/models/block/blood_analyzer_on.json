@@ -1,0 +1,7 @@
+{
+  "parent": "blood_system:block/blood_analyzer",
+  "textures": {
+    "0": "blood_system:block/blood_analyzer_on",
+    "particle": "blood_system:block/blood_analyzer_on"
+  }
+}

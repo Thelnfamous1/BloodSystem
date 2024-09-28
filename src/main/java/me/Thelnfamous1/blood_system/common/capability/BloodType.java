@@ -1,12 +1,14 @@
 package me.Thelnfamous1.blood_system.common.capability;
 
-import com.mojang.serialization.Codec;
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import net.minecraft.Util;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
+import org.jetbrains.annotations.Nullable;
 
 public enum BloodType implements StringRepresentable {
     A_POSITIVE("A+", AntigenType.A, AntibodyType.B, RhFactor.PRESENT),
@@ -18,7 +20,7 @@ public enum BloodType implements StringRepresentable {
     O_POSITIVE("O+", AntigenType.NONE, AntibodyType.AB, RhFactor.PRESENT),
     O_NEGATIVE("O-", AntigenType.NONE, AntibodyType.AB, RhFactor.ABSENT);
 
-    public static final Codec<BloodType> CODEC = StringRepresentable.fromEnum(BloodType::values);
+    public static final StringRepresentable.EnumCodec<BloodType> CODEC = StringRepresentable.fromEnum(BloodType::values);
 
     private final String name;
     private final AntigenType antigenType;
@@ -32,9 +34,25 @@ public enum BloodType implements StringRepresentable {
         this.rhFactor = rhFactor;
     }
 
+    @Nullable
+    public static BloodType read(CompoundTag tag, String key){
+        if(tag.contains(key, Tag.TAG_STRING)){
+            return BloodType.byName(tag.getString(key));
+        } else if(tag.contains(key, Tag.TAG_ANY_NUMERIC)){
+            return BloodType.byOrdinal(tag.getByte(key));
+        }
+        return null;
+    }
+
+    @Nullable
+    public static BloodType byName(String pName) {
+        return CODEC.byName(pName);
+    }
+
+    @Nullable
     public static BloodType byOrdinal(int ordinal) {
         if (ordinal < 0 || ordinal > values().length) {
-            ordinal = 0;
+            return null;
         }
 
         return values()[ordinal];
@@ -42,6 +60,10 @@ public enum BloodType implements StringRepresentable {
 
     public static BloodType getRandom(RandomSource randomSource) {
         return Util.getRandom(BloodType.values(), randomSource);
+    }
+
+    public static MutableComponent getCaption() {
+        return Component.translatable(BloodSystemMod.translationKeyPrefixed("blood_type"));
     }
 
     public MutableComponent getDisplayName() {

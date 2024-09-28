@@ -1,12 +1,15 @@
 package me.Thelnfamous1.blood_system.client;
 
 import me.Thelnfamous1.blood_system.BloodSystemMod;
-import me.Thelnfamous1.blood_system.common.item.BloodSyringeItem;
+import me.Thelnfamous1.blood_system.common.item.BloodFillableItem;
 import me.Thelnfamous1.blood_system.common.network.BloodSystemNetwork;
 import me.Thelnfamous1.blood_system.common.network.ServerboundRequestBloodSync;
 import me.Thelnfamous1.blood_system.common.util.DebugFlags;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
@@ -36,13 +39,17 @@ public class BloodSystemModClient {
     public static class ModloadingEvents{
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.SYRINGE.get(), BLOOD_FILLED_ITEM_PROPERTY, (pStack, pLevel, pEntity, pSeed) -> {
-                if(BloodSyringeItem.getStoredBloodType(pStack).isPresent()){
-                    return 1.0F;
-                } else{
-                    return 0.0F;
-                }
-            }));
+            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.SYRINGE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
+            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.BLOOD_BAG.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
+            event.enqueueWork(() -> ItemProperties.register(BloodSystemMod.BLOOD_BAG_AND_NEEDLE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
+        }
+
+        private static float getBloodFilled(ItemStack pStack, ClientLevel level, LivingEntity entity, long seed) {
+            if(BloodFillableItem.getStoredBloodType(pStack).isPresent()){
+                return 1.0F;
+            } else{
+                return 0.0F;
+            }
         }
 
         @SubscribeEvent

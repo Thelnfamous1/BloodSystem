@@ -16,12 +16,20 @@ public class BloodEffect extends MobEffect {
         super(pCategory, pColor);
     }
 
+    public static float getTransfusionBloodGainPerEffectTick() {
+        return 0.78F;
+    }
+
+    public static int getTransfusionEffectTickInterval() {
+        return 20;
+    }
+
     @Override
     public boolean isDurationEffectTick(int pDuration, int pAmplifier) {
         if(this == BloodSystemMod.BLEEDING.get()){
             return pDuration % 600 == 0;
         } else if(this == BloodSystemMod.TRANSFUSION.get()){
-            return pDuration % 20 == 0;
+            return pDuration % getTransfusionEffectTickInterval() == 0;
         } else {
             return false;
         }
@@ -33,7 +41,7 @@ public class BloodEffect extends MobEffect {
             if(this == BloodSystemMod.BLEEDING.get()){
                 BloodCapabilityProvider.getCapability(player).ifPresent(cap -> cap.loseBlood(1.0F));
             } else if(this == BloodSystemMod.TRANSFUSION.get()){
-                BloodCapabilityProvider.getCapability(player).ifPresent(cap -> cap.gainBlood(0.78F));
+                BloodCapabilityProvider.getCapability(player).ifPresent(cap -> cap.gainBlood(getTransfusionBloodGainPerEffectTick()));
             }
         }
     }
