@@ -66,6 +66,10 @@ public enum BloodType implements StringRepresentable {
         return Component.translatable(BloodSystemMod.translationKeyPrefixed("blood_type"));
     }
 
+    public static MutableComponent getUnknownDisplayName() {
+        return Component.translatable(BloodSystemMod.translationKey("blood_type", "unknown"));
+    }
+
     public MutableComponent getDisplayName() {
         return Component.translatable(this.getTranslationKey());
     }

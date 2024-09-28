@@ -35,6 +35,7 @@ public class BloodBagAndNeedleItem extends BloodBagItem{
         }
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, transfusionDuration));
         player.addEffect(new MobEffectInstance(ModMobEffects.TRANSFUSION.get(), transfusionDuration));
+        player.getCooldowns().addCooldown(this, transfusionDuration);
     }
 
     @Override

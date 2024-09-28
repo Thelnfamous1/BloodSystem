@@ -213,7 +213,9 @@ public abstract class BloodFillableItem extends Item {
     }
 
     protected void onUseCompleted(ItemStack stack, Level pLevel, Player player) {
-        player.getCooldowns().addCooldown(stack.getItem(), 10);
+        if(!player.getCooldowns().isOnCooldown(stack.getItem())){
+            player.getCooldowns().addCooldown(stack.getItem(), 10);
+        }
     }
 
     @Override
@@ -230,16 +232,20 @@ public abstract class BloodFillableItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
-        boolean analyzed = isAnalyzed(pStack);
-        boolean creative = pIsAdvanced instanceof CustomTooltipFlag customTooltipFlag && customTooltipFlag.isCreative();
-        if(analyzed || creative){
-            getStoredBloodType(pStack).ifPresent(bloodType -> {
-                MutableComponent bloodTypeTooltip = CommonComponents.optionNameValue(BloodType.getCaption(), bloodType.getDisplayName());
-                if(!analyzed){
+        getStoredBloodType(pStack).ifPresent(bloodType -> {
+            boolean analyzed = isAnalyzed(pStack);
+            boolean creative = pIsAdvanced instanceof CustomTooltipFlag customTooltipFlag && customTooltipFlag.isCreative();
+            MutableComponent bloodTypeTooltip = CommonComponents.optionNameValue(BloodType.getCaption(), bloodType.getDisplayName());
+            if(!analyzed){
+                if(creative){
                     bloodTypeTooltip.withStyle(ChatFormatting.ITALIC);
+                    pTooltipComponents.add(bloodTypeTooltip);
+                } else{
+                    pTooltipComponents.add(CommonComponents.optionNameValue(BloodType.getCaption(), BloodType.getUnknownDisplayName()).withStyle(ChatFormatting.RED));
                 }
+            } else{
                 pTooltipComponents.add(bloodTypeTooltip);
-            });
-        }
+            }
+        });
     }
 }

@@ -51,6 +51,7 @@ public class BloodSystemDatagen {
                 for(BloodType bloodType : BloodType.values()){
                     this.add(bloodType.getTranslationKey(), bloodType.getSerializedName());
                 }
+                this.add(BloodType.getUnknownDisplayName().getString(), "?");
 
                 this.add(BloodSystemCommands.ERROR_MISSING_BLOOD_DATA.toString(), "%s is missing their Blood System data");
                 this.add(BloodSystemCommands.GET_BLOOD_SUCCESS, "%s has %d blood");
