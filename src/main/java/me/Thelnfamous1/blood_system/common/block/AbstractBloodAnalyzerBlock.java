@@ -1,7 +1,10 @@
 package me.Thelnfamous1.blood_system.common.block;
 
+import me.Thelnfamous1.blood_system.common.item.BloodFillableItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,7 +14,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -31,12 +33,27 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
 
    @Override
    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+      ItemStack itemInHand = pPlayer.getItemInHand(pHand);
+      if(itemInHand.getItem() instanceof BloodFillableItem && BloodFillableItem.getStoredBloodType(itemInHand).isPresent() && !BloodFillableItem.isAnalyzed(itemInHand)){
+         pPlayer.playNotifySound(SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
+         if(!pLevel.isClientSide){
+            if(pPlayer.isSecondaryUseActive()){
+               BloodFillableItem.setAnalyzed(itemInHand, true);
+            } else{
+               BloodFillableItem.createAndGiveAnalyzedContainer(itemInHand, pPlayer);
+            }
+         }
+         return InteractionResult.sidedSuccess(pLevel.isClientSide);
+      }
+      return InteractionResult.PASS;
+      /*
       if (pLevel.isClientSide) {
          return InteractionResult.SUCCESS;
       } else {
          this.openContainer(pLevel, pPos, pPlayer);
          return InteractionResult.CONSUME;
       }
+       */
    }
 
    protected abstract void openContainer(Level pLevel, BlockPos pPos, Player pPlayer);
@@ -48,22 +65,22 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
 
    @Override
    public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, LivingEntity pPlacer, ItemStack pStack) {
+      /*
       if (pStack.hasCustomHoverName()) {
          BlockEntity blockentity = pLevel.getBlockEntity(pPos);
-         /*
          if (blockentity instanceof AbstractFurnaceBlockEntity) {
             ((AbstractFurnaceBlockEntity)blockentity).setCustomName(pStack.getHoverName());
          }
-          */
       }
+      */
 
    }
 
    @Override
    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
       if (!pState.is(pNewState.getBlock())) {
-         BlockEntity blockentity = pLevel.getBlockEntity(pPos);
          /*
+         BlockEntity blockentity = pLevel.getBlockEntity(pPos);
          if (blockentity instanceof AbstractFurnaceBlockEntity) {
             if (pLevel instanceof ServerLevel) {
                Containers.dropContents(pLevel, pPos, (AbstractFurnaceBlockEntity)blockentity);
@@ -72,7 +89,7 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
 
             pLevel.updateNeighbourForOutputSignal(pPos, this);
          }
-          */
+         */
 
          super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
       }

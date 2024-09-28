@@ -17,6 +17,7 @@ public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, BloodSystemMod.MODID);
     public static final RegistryObject<Block> BLOOD_ANALYZER = BLOCKS.register("blood_analyzer", () -> new BloodAnalyzerBlock(
             BlockBehaviour.Properties.of(Material.METAL)
+                    .noOcclusion()
                     .requiresCorrectToolForDrops()
                     .strength(3.5F)
                     .lightLevel(litBlockEmission(13))));

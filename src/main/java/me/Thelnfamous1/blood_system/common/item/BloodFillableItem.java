@@ -1,11 +1,13 @@
 package me.Thelnfamous1.blood_system.common.item;
 
+import me.Thelnfamous1.blood_system.common.block.AbstractBloodAnalyzerBlock;
 import me.Thelnfamous1.blood_system.common.capability.BloodCapability;
 import me.Thelnfamous1.blood_system.common.capability.BloodCapabilityProvider;
 import me.Thelnfamous1.blood_system.common.capability.BloodType;
 import me.Thelnfamous1.blood_system.common.util.CustomTooltipFlag;
 import me.Thelnfamous1.blood_system.mixin.LivingEntityAccessor;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -20,6 +22,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -34,10 +37,15 @@ public abstract class BloodFillableItem extends Item {
         super(pProperties);
     }
 
-    public static void createAndGiveFilledContainer(ItemStack pStack, Player player, @Nullable BloodType bloodType) {
-        if(player.getAbilities().instabuild){
-            pStack = pStack.copy();
+    public static void createAndGiveAnalyzedContainer(ItemStack pStack, Player player) {
+        ItemStack split = pStack.split(1);
+        BloodFillableItem.setAnalyzed(split, true);
+        if(!player.getInventory().add(split)){
+            player.drop(split, false);
         }
+    }
+
+    public static void createAndGiveFilledContainer(ItemStack pStack, Player player, @Nullable BloodType bloodType) {
         ItemStack split = pStack.split(1);
         BloodFillableItem.setStoredBloodType(split, bloodType);
         if(bloodType == null){
@@ -107,6 +115,11 @@ public abstract class BloodFillableItem extends Item {
         } else if(analyzed){
             bloodData.putBoolean(ANALYZED_TAG_KEY, true);
         }
+    }
+
+    @Override
+    public boolean doesSneakBypassUse(ItemStack stack, LevelReader level, BlockPos pos, Player player) {
+        return level.getBlockState(pos).getBlock() instanceof AbstractBloodAnalyzerBlock;
     }
 
     protected abstract boolean isUseable();
