@@ -47,7 +47,10 @@ public class BloodSystemMod {
         modEventBus.register(BloodSystemDatagen.class);
         ModAttributes.ATTRIBUTES.register(modEventBus);
         ModMobEffects.MOB_EFFECTS.register(modEventBus);
+        ModRecipeTypes.RECIPE_TYPES.register(modEventBus);
         ModRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
+        ModBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
+        ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(BloodCapabilityProvider.class);

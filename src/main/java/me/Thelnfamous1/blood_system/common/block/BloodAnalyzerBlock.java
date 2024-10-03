@@ -2,6 +2,8 @@ package me.Thelnfamous1.blood_system.common.block;
 
 import javax.annotation.Nullable;
 
+import me.Thelnfamous1.blood_system.common.block.entity.BloodAnalyzerBlockEntity;
+import me.Thelnfamous1.blood_system.common.registries.ModBlockEntityTypes;
 import me.Thelnfamous1.blood_system.common.util.VoxelShapeUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -47,8 +49,9 @@ public class BloodAnalyzerBlock extends AbstractBloodAnalyzerBlock {
       return shape;
    }
 
+   @Override
    public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
-      return /*new FurnaceBlockEntity(pPos, pState);*/ null;
+      return new BloodAnalyzerBlockEntity(pPos, pState);
    }
 
    @Override
@@ -65,18 +68,16 @@ public class BloodAnalyzerBlock extends AbstractBloodAnalyzerBlock {
    @Override
    @Nullable
    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-      return /*createFurnaceTicker(pLevel, pBlockEntityType, BlockEntityType.FURNACE);*/ null;
+      return createBloodAnalyzerTicker(pLevel, pBlockEntityType, ModBlockEntityTypes.BLOOD_ANALYZER.get());
    }
 
    @Override
    protected void openContainer(Level pLevel, BlockPos pPos, Player pPlayer) {
-      /*
       BlockEntity blockentity = pLevel.getBlockEntity(pPos);
-      if (blockentity instanceof FurnaceBlockEntity) {
-         pPlayer.openMenu((MenuProvider)blockentity);
-         pPlayer.awardStat(Stats.INTERACT_WITH_FURNACE);
+      if (blockentity instanceof BloodAnalyzerBlockEntity bloodAnalyzerBlockEntity) {
+         pPlayer.openMenu(bloodAnalyzerBlockEntity);
+         //pPlayer.awardStat(Stats.INTERACT_WITH_FURNACE);
       }
-       */
 
    }
 }

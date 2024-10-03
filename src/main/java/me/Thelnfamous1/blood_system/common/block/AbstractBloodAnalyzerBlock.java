@@ -1,10 +1,10 @@
 package me.Thelnfamous1.blood_system.common.block;
 
-import me.Thelnfamous1.blood_system.common.item.BloodFillableItem;
+import me.Thelnfamous1.blood_system.common.block.entity.AbstractBloodAnalyzerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,6 +14,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -21,6 +24,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+
+import javax.annotation.Nullable;
 
 public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -33,6 +39,7 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
 
    @Override
    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+      /*
       ItemStack itemInHand = pPlayer.getItemInHand(pHand);
       if(itemInHand.getItem() instanceof BloodFillableItem && BloodFillableItem.getStoredBloodType(itemInHand).isPresent() && !BloodFillableItem.isAnalyzed(itemInHand)){
          pPlayer.playNotifySound(SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -46,14 +53,13 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
          return InteractionResult.sidedSuccess(pLevel.isClientSide);
       }
       return InteractionResult.PASS;
-      /*
+       */
       if (pLevel.isClientSide) {
          return InteractionResult.SUCCESS;
       } else {
          this.openContainer(pLevel, pPos, pPlayer);
          return InteractionResult.CONSUME;
       }
-       */
    }
 
    protected abstract void openContainer(Level pLevel, BlockPos pPos, Player pPlayer);
@@ -65,31 +71,27 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
 
    @Override
    public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, LivingEntity pPlacer, ItemStack pStack) {
-      /*
       if (pStack.hasCustomHoverName()) {
          BlockEntity blockentity = pLevel.getBlockEntity(pPos);
-         if (blockentity instanceof AbstractFurnaceBlockEntity) {
-            ((AbstractFurnaceBlockEntity)blockentity).setCustomName(pStack.getHoverName());
+         if (blockentity instanceof AbstractBloodAnalyzerBlockEntity bloodAnalyzerBlockEntity) {
+            bloodAnalyzerBlockEntity.setCustomName(pStack.getHoverName());
          }
       }
-      */
 
    }
 
    @Override
    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
       if (!pState.is(pNewState.getBlock())) {
-         /*
          BlockEntity blockentity = pLevel.getBlockEntity(pPos);
-         if (blockentity instanceof AbstractFurnaceBlockEntity) {
+         if (blockentity instanceof AbstractBloodAnalyzerBlockEntity bloodAnalyzerBlockEntity) {
             if (pLevel instanceof ServerLevel) {
-               Containers.dropContents(pLevel, pPos, (AbstractFurnaceBlockEntity)blockentity);
-               ((AbstractFurnaceBlockEntity)blockentity).getRecipesToAwardAndPopExperience((ServerLevel)pLevel, Vec3.atCenterOf(pPos));
+               Containers.dropContents(pLevel, pPos, bloodAnalyzerBlockEntity);
+               bloodAnalyzerBlockEntity.getRecipesToAwardAndPopExperience((ServerLevel)pLevel, Vec3.atCenterOf(pPos));
             }
 
             pLevel.updateNeighbourForOutputSignal(pPos, this);
          }
-         */
 
          super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
       }
@@ -125,10 +127,8 @@ public abstract class AbstractBloodAnalyzerBlock extends BaseEntityBlock {
       pBuilder.add(FACING, LIT);
    }
 
-   /*
    @Nullable
-   protected static <T extends BlockEntity> BlockEntityTicker<T> createFurnaceTicker(Level pLevel, BlockEntityType<T> pServerType, BlockEntityType<? extends AbstractFurnaceBlockEntity> pClientType) {
-      return pLevel.isClientSide ? null : createTickerHelper(pServerType, pClientType, AbstractFurnaceBlockEntity::serverTick);
+   protected static <T extends BlockEntity> BlockEntityTicker<T> createBloodAnalyzerTicker(Level pLevel, BlockEntityType<T> pServerType, BlockEntityType<? extends AbstractBloodAnalyzerBlockEntity> pClientType) {
+      return pLevel.isClientSide ? null : createTickerHelper(pServerType, pClientType, AbstractBloodAnalyzerBlockEntity::serverTick);
    }
-    */
 }

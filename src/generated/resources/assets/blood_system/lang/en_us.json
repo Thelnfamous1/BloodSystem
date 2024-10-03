@@ -17,6 +17,7 @@
   "commands.blood_system.blood_type.get.success": "%s has blood type %s",
   "commands.blood_system.blood_type.set.success": "Set the blood type of %s to %s",
   "commands.blood_system.missing": "%s is missing their Blood System data",
+  "container.blood_system.blood_analyzer": "Blood Analyzer",
   "effect.blood_system.bleeding": "Bleeding",
   "effect.blood_system.circulation": "Circulation",
   "effect.blood_system.transfusion": "Transfusion",

@@ -7,4 +7,5 @@ public class DebugFlags {
     public static final boolean DEBUG_PASSIVE_BLOOD_REGENERATION = !FMLEnvironment.production;
     public static final boolean DEBUG_BLOOD_LOSS_EFFECTS = !FMLEnvironment.production;
     public static final boolean DEBUG_BLOOD_LOSS_TAKEN_DAMAGE = !FMLEnvironment.production;
+    public static final boolean DEBUG_BLOOD_ANALYZER = !FMLEnvironment.production;
 }

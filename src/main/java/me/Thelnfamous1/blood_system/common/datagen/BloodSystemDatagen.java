@@ -3,6 +3,7 @@ package me.Thelnfamous1.blood_system.common.datagen;
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.client.BloodSystemModClient;
 import me.Thelnfamous1.blood_system.common.block.AbstractBloodAnalyzerBlock;
+import me.Thelnfamous1.blood_system.common.block.entity.BloodAnalyzerBlockEntity;
 import me.Thelnfamous1.blood_system.common.capability.BloodType;
 import me.Thelnfamous1.blood_system.common.command.BloodSystemCommands;
 import me.Thelnfamous1.blood_system.common.registries.*;
@@ -59,6 +60,8 @@ public class BloodSystemDatagen {
                 this.add(BloodSystemCommands.GET_BLOOD_TYPE_SUCCESS, "%s has blood type %s");
                 this.add(BloodSystemCommands.ERROR_NO_BLOOD_TYPE.toString(), "%s has no blood type");
                 this.add(BloodSystemCommands.SET_BLOOD_TYPE_SUCCESS, "Set the blood type of %s to %s");
+
+                this.add(BloodAnalyzerBlockEntity.NAME_KEY, "Blood Analyzer");
             }
         });
         event.getExistingFileHelper().trackGenerated(ModItems.VEINAMITOL.getId(), ITEM_TEXTURE_RESOURCE);
@@ -129,6 +132,7 @@ public class BloodSystemDatagen {
             @Override
             protected void buildCraftingRecipes(Consumer<FinishedRecipe> pFinishedRecipeConsumer) {
                 SpecialRecipeBuilder.special(ModRecipeSerializers.BLOOD_BAG_AND_NEEDLE.get()).save(pFinishedRecipeConsumer, BloodSystemMod.location("blood_bag_and_needle").toString());
+                SpecialRecipeBuilder.special(ModRecipeSerializers.BLOOD_ANALYSIS.get()).save(pFinishedRecipeConsumer, BloodSystemMod.location("blood_analysis").toString());
             }
         });
     }

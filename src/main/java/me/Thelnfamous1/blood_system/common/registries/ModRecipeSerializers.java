@@ -1,6 +1,7 @@
 package me.Thelnfamous1.blood_system.common.registries;
 
 import me.Thelnfamous1.blood_system.BloodSystemMod;
+import me.Thelnfamous1.blood_system.common.recipe.BloodAnalysisRecipe;
 import me.Thelnfamous1.blood_system.common.recipe.BloodBagAndNeedleRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleRecipeSerializer;
@@ -12,4 +13,5 @@ public class ModRecipeSerializers {
 
     public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, BloodSystemMod.MODID);
     public static final RegistryObject<SimpleRecipeSerializer<BloodBagAndNeedleRecipe>> BLOOD_BAG_AND_NEEDLE = RECIPE_SERIALIZERS.register("crafting_special_bloodbagandneedle", () -> new SimpleRecipeSerializer<>(BloodBagAndNeedleRecipe::new));
+    public static final RegistryObject<SimpleRecipeSerializer<BloodAnalysisRecipe>> BLOOD_ANALYSIS = RECIPE_SERIALIZERS.register("blood_analysis", () -> new SimpleRecipeSerializer<>(BloodAnalysisRecipe::new));
 }
