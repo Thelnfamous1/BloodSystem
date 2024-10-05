@@ -22,6 +22,8 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
    private static final int INV_SLOT_END = 30;
    private static final int USE_ROW_SLOT_START = 30;
    private static final int USE_ROW_SLOT_END = 39;
+   public static final int ANALYSIS_BAR_HEIGHT = 59;
+   public static final int BATTERY_POWER_WIDTH = 24;
    private final Container container;
    private final ContainerData data;
    protected final Level level;
@@ -39,9 +41,9 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
       this.container = pContainer;
       this.data = pData;
       this.level = pPlayerInventory.player.level;
-      this.addSlot(new Slot(pContainer, 0, 56, 17));
-      this.addSlot(new BloodAnalyzerBatterySlot(this, pContainer, 1, 56, 53));
-      this.addSlot(new BloodAnalyzerResultSlot(pPlayerInventory.player, pContainer, 2, 116, 35));
+      this.addSlot(new Slot(pContainer, INGREDIENT_SLOT, 79, 17));
+      this.addSlot(new BloodAnalyzerBatterySlot(this, pContainer, FUEL_SLOT, 17, 17));
+      this.addSlot(new BloodAnalyzerResultSlot(pPlayerInventory.player, pContainer, RESULT_SLOT, 79, 58));
 
       for(int i = 0; i < 3; ++i) {
          for(int j = 0; j < 9; ++j) {
@@ -128,7 +130,7 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
    public int getBurnProgress() {
       int cookingProgress = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_COOKING_PROGRESS);
       int cookingTotalTime = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_COOKING_TOTAL_TIME);
-      return cookingTotalTime != 0 && cookingProgress != 0 ? cookingProgress * 24 / cookingTotalTime : 0;
+      return cookingTotalTime != 0 && cookingProgress != 0 ? cookingProgress * ANALYSIS_BAR_HEIGHT / cookingTotalTime : 0;
    }
 
    public int getLitProgress() {
@@ -137,7 +139,7 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
          litDuration = AbstractBloodAnalyzerBlockEntity.BURN_TIME_STANDARD;
       }
 
-      return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_LIT_TIME) * 13 / litDuration;
+      return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_LIT_TIME) * BATTERY_POWER_WIDTH / litDuration;
    }
 
    public boolean isLit() {
