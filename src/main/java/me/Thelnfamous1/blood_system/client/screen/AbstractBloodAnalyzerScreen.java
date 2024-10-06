@@ -54,6 +54,9 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
       }
 
       int burnProgress = this.menu.getBurnProgress();
+      // Blood red, R=120, G=6, and B=6
+      RenderSystem.setShaderColor(120.0F/256.0F, 6.0F/256.0F, 6.0F/256.0F, 1.0F);
       this.blit(pPoseStack, x + ANALYSIS_BAR_X_OFFSET, y + ANALYSIS_BAR_Y_OFFSET, ANALYSIS_BAR_U_OFFSET, ANALYSIS_BAR_V_OFFSET, ANALYSIS_BAR_WIDTH, burnProgress);
+      RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 }
