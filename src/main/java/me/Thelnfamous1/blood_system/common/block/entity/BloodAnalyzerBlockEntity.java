@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class BloodAnalyzerBlockEntity extends AbstractBloodAnalyzerBlockEntity {
    public static final String NAME_KEY = BloodSystemMod.translationKey("container", "blood_analyzer");
+   public static final String START_BUTTON_KEY = BloodSystemMod.translationKey("container", "blood_analyzer.start");
 
    public BloodAnalyzerBlockEntity(BlockPos pPos, BlockState pBlockState) {
       super(ModBlockEntityTypes.BLOOD_ANALYZER.get(), pPos, pBlockState, ModRecipeTypes.BLOOD_ANALYSIS.get());

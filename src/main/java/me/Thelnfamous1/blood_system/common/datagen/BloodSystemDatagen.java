@@ -62,6 +62,7 @@ public class BloodSystemDatagen {
                 this.add(BloodSystemCommands.SET_BLOOD_TYPE_SUCCESS, "Set the blood type of %s to %s");
 
                 this.add(BloodAnalyzerBlockEntity.NAME_KEY, "Blood Analyzer");
+                this.add(BloodAnalyzerBlockEntity.START_BUTTON_KEY, "Start");
             }
         });
         event.getExistingFileHelper().trackGenerated(ModItems.VEINAMITOL.getId(), ITEM_TEXTURE_RESOURCE);

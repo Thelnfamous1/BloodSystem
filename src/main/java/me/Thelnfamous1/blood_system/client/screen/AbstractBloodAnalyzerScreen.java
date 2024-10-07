@@ -2,7 +2,6 @@ package me.Thelnfamous1.blood_system.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.menu.AbstractBloodAnalyzerMenu;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -28,11 +27,13 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
    public static final int START_BUTTON_WIDTH = 17;
    public static final int START_BUTTON_HEIGHT = 12;
    private final ResourceLocation texture;
+   private final Component startButtonMessage;
    private StartAnalysisButton<T> startButton;
 
-   public AbstractBloodAnalyzerScreen(T pMenu, Inventory pPlayerInventory, Component pTitle, ResourceLocation pTexture) {
+   public AbstractBloodAnalyzerScreen(T pMenu, Inventory pPlayerInventory, Component pTitle, ResourceLocation pTexture, Component startButtonMessage) {
       super(pMenu, pPlayerInventory, pTitle);
       this.texture = pTexture;
+      this.startButtonMessage = startButtonMessage;
    }
 
    @Override
@@ -40,7 +41,7 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
       super.init();
       this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
       this.startButton = new StartAnalysisButton<>(this, this.leftPos + START_BUTTON_X_OFFSET, this.topPos + START_BUTTON_Y_OFFSET, START_BUTTON_WIDTH, START_BUTTON_HEIGHT,
-              Component.translatable(BloodSystemMod.translationKey("container", "blood_analyzer.start")),
+              this.startButtonMessage,
               b -> {
                  if (this.menu.clickMenuButton(this.minecraft.player, AbstractBloodAnalyzerMenu.START_BUTTON_ID)) {
                     this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, AbstractBloodAnalyzerMenu.START_BUTTON_ID);
