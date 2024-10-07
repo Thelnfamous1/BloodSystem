@@ -2,6 +2,7 @@ package me.Thelnfamous1.blood_system.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.menu.AbstractBloodAnalyzerMenu;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -22,7 +23,12 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
    public static final int BATTERY_CHARGE_U_OFFSET = 197;
    public static final int BATTERY_CHARGE_V_OFFSET = 0;
    public static final int BATTERY_CHARGE_HEIGHT = 15;
+   public static final int START_BUTTON_X_OFFSET = 147;
+   public static final int START_BUTTON_Y_OFFSET = 55;
+   public static final int START_BUTTON_WIDTH = 17;
+   public static final int START_BUTTON_HEIGHT = 12;
    private final ResourceLocation texture;
+   private StartAnalysisButton startButton;
 
    public AbstractBloodAnalyzerScreen(T pMenu, Inventory pPlayerInventory, Component pTitle, ResourceLocation pTexture) {
       super(pMenu, pPlayerInventory, pTitle);
@@ -33,6 +39,15 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
    public void init() {
       super.init();
       this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+      this.startButton = new StartAnalysisButton(this.leftPos + START_BUTTON_X_OFFSET, this.topPos + START_BUTTON_Y_OFFSET, START_BUTTON_WIDTH, START_BUTTON_HEIGHT,
+              Component.translatable(BloodSystemMod.translationKey("container", "blood_analyzer.start")),
+              b -> {
+                 if (this.menu.clickMenuButton(this.minecraft.player, AbstractBloodAnalyzerMenu.START_BUTTON_ID)) {
+                    this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, AbstractBloodAnalyzerMenu.START_BUTTON_ID);
+                 }
+              });
+      this.startButton.active = this.menu.isCharged();
+      this.addRenderableWidget(this.startButton);
    }
 
    @Override
@@ -64,5 +79,11 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
 
    private void drawLitProgress(PoseStack pPoseStack, int x, int y, int chargeProgress, int xOffset, int yOffset) {
        this.blit(pPoseStack, x + xOffset, y + yOffset, BATTERY_CHARGE_U_OFFSET, BATTERY_CHARGE_V_OFFSET, chargeProgress, BATTERY_CHARGE_HEIGHT);
+   }
+
+   @Override
+   protected void containerTick() {
+      super.containerTick();
+      this.startButton.active = this.menu.isCharged();
    }
 }

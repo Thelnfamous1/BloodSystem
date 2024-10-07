@@ -51,17 +51,19 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    private static final int[] SLOTS_FOR_UP = new int[]{0};
    private static final int[] SLOTS_FOR_DOWN = new int[]{3, 2, 1};
    private static final int[] SLOTS_FOR_SIDES = new int[]{1, 2};
-   public static final int DATA_CHARGE_TIME_A = 0;
-   public static final int DATA_CHARGE_TIME_B = 1;
-   public static final int DATA_CHARGE_DURATION_A = 2;
-   public static final int DATA_CHARGE_DURATION_B = 3;
-   public static final int DATA_ANALYSIS_PROGRESS = 4;
-   public static final int DATA_ANALYSIS_TOTAL_TIME = 5;
-   public static final int NUM_DATA_VALUES = 6;
+   public static final int DATA_STARTED = 0;
+   public static final int DATA_CHARGE_TIME_A = 1;
+   public static final int DATA_CHARGE_TIME_B = 2;
+   public static final int DATA_CHARGE_DURATION_A = 3;
+   public static final int DATA_CHARGE_DURATION_B = 4;
+   public static final int DATA_ANALYSIS_PROGRESS = 5;
+   public static final int DATA_ANALYSIS_TOTAL_TIME = 6;
+   public static final int NUM_DATA_VALUES = 7;
    public static final int CHARGE_TIME_STANDARD = 200;
-   public static final int CHARGE_CONSUME_SPEED = 2;
+   public static final int ANALYSIS_DECAY_SPEED = 2;
    private final RecipeType<? extends BloodAnalysisRecipe> recipeType;
    protected NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
+   boolean started;
    int chargeTimeA;
    int chargeTimeB;
    int chargeDurationA;
@@ -72,6 +74,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       @Override
       public int get(int id) {
           return switch (id) {
+             case DATA_STARTED -> AbstractBloodAnalyzerBlockEntity.this.started ? 1 : 0;
              case DATA_CHARGE_TIME_A -> AbstractBloodAnalyzerBlockEntity.this.chargeTimeA;
              case DATA_CHARGE_TIME_B -> AbstractBloodAnalyzerBlockEntity.this.chargeTimeB;
              case DATA_CHARGE_DURATION_A -> AbstractBloodAnalyzerBlockEntity.this.chargeDurationA;
@@ -85,6 +88,9 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       @Override
       public void set(int id, int value) {
          switch (id) {
+            case DATA_STARTED:
+               AbstractBloodAnalyzerBlockEntity.this.started = value > 0;
+               break;
             case DATA_CHARGE_TIME_A:
                AbstractBloodAnalyzerBlockEntity.this.chargeTimeA = value;
                break;
@@ -120,7 +126,11 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       this.recipeType = pRecipeType;
    }
 
-   private boolean isLit() {
+   public boolean isStarted(){
+      return this.started;
+   }
+
+   private boolean isCharged() {
       return this.chargeTimeA > 0 || this.chargeTimeB > 0;
    }
 
@@ -129,6 +139,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       super.load(pTag);
       this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
       ContainerHelper.loadAllItems(pTag, this.items);
+      this.started = pTag.getBoolean("Started");
       this.chargeTimeA = pTag.getInt("ChargeTimeA");
       this.chargeTimeB = pTag.getInt("ChargeTimeB");
       this.analysisProgress = pTag.getInt("AnalysisTime");
@@ -146,6 +157,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    @Override
    protected void saveAdditional(CompoundTag pTag) {
       super.saveAdditional(pTag);
+      pTag.putBoolean("Started", this.started);
       pTag.putInt("ChargeTimeA", this.chargeTimeA);
       pTag.putInt("ChargeTimeB", this.chargeTimeB);
       pTag.putInt("AnalysisTime", this.analysisProgress);
@@ -157,21 +169,14 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    }
 
    public static void serverTick(Level pLevel, BlockPos pPos, BlockState pState, AbstractBloodAnalyzerBlockEntity pBlockEntity) {
-      boolean wasLit = pBlockEntity.isLit();
+      boolean wasCharged = pBlockEntity.isCharged();
       boolean changed = false;
-      if (pBlockEntity.isLit()) {
-         if(pBlockEntity.chargeTimeA > 0){
-            --pBlockEntity.chargeTimeA;
-         } else if(pBlockEntity.chargeTimeB > 0){
-            --pBlockEntity.chargeTimeB;
-         }
-      }
 
       ItemStack batteryA = pBlockEntity.items.get(SLOT_BATTERY_A);
       ItemStack batteryB = pBlockEntity.items.get(SLOT_BATTERY_B);
       boolean hasInput = !pBlockEntity.items.get(SLOT_INPUT).isEmpty();
       boolean hasBattery = !batteryA.isEmpty() || !batteryB.isEmpty();
-      if (pBlockEntity.isLit() || hasBattery && hasInput) {
+      if (pBlockEntity.isCharged() || hasBattery /*&& hasInput*/) {
          Recipe<?> recipe;
          if (hasInput) {
             recipe = pBlockEntity.quickCheck.getRecipeFor(pBlockEntity, pLevel).orElse(null);
@@ -179,35 +184,53 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
             recipe = null;
          }
          if(DebugFlags.DEBUG_BLOOD_ANALYZER && hasInput){
-            BloodSystemMod.LOGGER.info("Found recipe {} for {}, has charge? {}", recipe == null ? null : recipe.getId(), pBlockEntity.items.get(SLOT_INPUT), hasBattery);
+            BloodSystemMod.LOGGER.info("Found recipe {} for {}, has battery? {}", recipe == null ? null : recipe.getId(), pBlockEntity.items.get(SLOT_INPUT), hasBattery);
          }
 
          int maxStackSize = pBlockEntity.getMaxStackSize();
-         if (!pBlockEntity.isLit() && pBlockEntity.canAnalyze(recipe, pBlockEntity.items, maxStackSize)) {
-            changed = consumeChargeFromBattery(pBlockEntity, batteryA, batteryB);
+         if (pBlockEntity.chargeTimeA <= 0 || pBlockEntity.chargeTimeB <= 0) {
+            changed = charge(pBlockEntity, batteryA, batteryB);
          }
 
-         if (pBlockEntity.isLit() && pBlockEntity.canAnalyze(recipe, pBlockEntity.items, maxStackSize)) {
-            ++pBlockEntity.analysisProgress;
-            if (pBlockEntity.analysisProgress == pBlockEntity.analysisTotalTime) {
-               pBlockEntity.analysisProgress = 0;
-               pBlockEntity.analysisTotalTime = getTotalAnalysisTime(pLevel, pBlockEntity);
-               if (pBlockEntity.analyze(recipe, pBlockEntity.items, maxStackSize)) {
-                  pBlockEntity.setRecipeUsed(recipe);
+         if (pBlockEntity.isCharged() && pBlockEntity.canAnalyze(recipe, pBlockEntity.items, maxStackSize)) {
+            if(pBlockEntity.started){
+               // Consume stored charge
+               if (pBlockEntity.isCharged()) {
+                  if(pBlockEntity.chargeTimeA > 0){
+                     --pBlockEntity.chargeTimeA;
+                  } else if(pBlockEntity.chargeTimeB > 0){
+                     --pBlockEntity.chargeTimeB;
+                  }
                }
+               // Progress analysis
+               ++pBlockEntity.analysisProgress;
+               if (pBlockEntity.analysisProgress == pBlockEntity.analysisTotalTime) {
+                  pBlockEntity.analysisProgress = 0;
+                  pBlockEntity.analysisTotalTime = getTotalAnalysisTime(pLevel, pBlockEntity);
+                  if (pBlockEntity.analyze(recipe, pBlockEntity.items, maxStackSize)) {
+                     pBlockEntity.setRecipeUsed(recipe);
+                  }
 
-               changed = true;
+                  changed = true;
+               }
             }
          } else {
             pBlockEntity.analysisProgress = 0;
          }
-      } else if (!pBlockEntity.isLit() && pBlockEntity.analysisProgress > 0) {
-         pBlockEntity.analysisProgress = Mth.clamp(pBlockEntity.analysisProgress - CHARGE_CONSUME_SPEED, 0, pBlockEntity.analysisTotalTime);
       }
+      /*
+      else if (!pBlockEntity.isCharged() && pBlockEntity.analysisProgress > 0) {
+         pBlockEntity.analysisProgress = Mth.clamp(pBlockEntity.analysisProgress - ANALYSIS_DECAY_SPEED, 0, pBlockEntity.analysisTotalTime);
+      }
+       */
 
-      if (wasLit != pBlockEntity.isLit()) {
+      // started, charged -> on
+      // started, uncharged -> off
+      // not started, charged -> off
+      // not started, uncharged -> off
+      if(wasCharged != pBlockEntity.isCharged() || pState.getValue(AbstractBloodAnalyzerBlock.LIT) != pBlockEntity.started) {
          changed = true;
-         pState = pState.setValue(AbstractBloodAnalyzerBlock.LIT, pBlockEntity.isLit());
+         pState = pState.setValue(AbstractBloodAnalyzerBlock.LIT, pBlockEntity.started && pBlockEntity.isCharged());
          pLevel.setBlock(pPos, pState, 3);
       }
 
@@ -217,30 +240,38 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
 
    }
 
-   private static boolean consumeChargeFromBattery(AbstractBloodAnalyzerBlockEntity pBlockEntity, ItemStack batteryA, ItemStack batteryB) {
+   private static boolean charge(AbstractBloodAnalyzerBlockEntity pBlockEntity, ItemStack batteryA, ItemStack batteryB) {
       int batteryACharge = pBlockEntity.getChargeDuration(batteryA);
       int batteryBCharge = pBlockEntity.getChargeDuration(batteryB);
-      int slotUsed;
-      ItemStack batteryUsed;
-      if(batteryACharge >= batteryBCharge){
-         slotUsed = SLOT_BATTERY_A;
-         batteryUsed = batteryA;
+      boolean chargedA = false;
+      boolean chargedB = false;
+      if(pBlockEntity.chargeTimeA <= 0){
+         chargedA = true;
          pBlockEntity.chargeTimeA = batteryACharge;
          pBlockEntity.chargeDurationA = pBlockEntity.chargeTimeA;
-      } else{
-         slotUsed = SLOT_BATTERY_B;
-         batteryUsed = batteryB;
+      }
+      if(pBlockEntity.chargeTimeB <= 0){
+         chargedB = true;
          pBlockEntity.chargeTimeB = batteryBCharge;
          pBlockEntity.chargeDurationB = pBlockEntity.chargeTimeB;
       }
-      if (pBlockEntity.isLit()) {
-         if (batteryUsed.hasCraftingRemainingItem())
-            pBlockEntity.items.set(slotUsed, batteryUsed.getCraftingRemainingItem());
-         else
-         if (!batteryUsed.isEmpty()) {
-            batteryUsed.shrink(1);
-            if (batteryUsed.isEmpty()) {
-               pBlockEntity.items.set(slotUsed, batteryUsed.getCraftingRemainingItem());
+      if (pBlockEntity.isCharged()) {
+         if (chargedA && batteryA.hasCraftingRemainingItem())
+            pBlockEntity.items.set(SLOT_BATTERY_A, batteryA.getCraftingRemainingItem());
+         if (chargedB && batteryB.hasCraftingRemainingItem())
+            pBlockEntity.items.set(SLOT_BATTERY_B, batteryB.getCraftingRemainingItem());
+         else {
+            if (chargedA && !batteryA.isEmpty()) {
+               batteryA.shrink(1);
+               if (batteryA.isEmpty()) {
+                  pBlockEntity.items.set(SLOT_BATTERY_A, batteryA.getCraftingRemainingItem());
+               }
+            }
+            if (chargedB && !batteryB.isEmpty()) {
+               batteryB.shrink(1);
+               if (batteryB.isEmpty()) {
+                  pBlockEntity.items.set(SLOT_BATTERY_B, batteryB.getCraftingRemainingItem());
+               }
             }
          }
          return true;

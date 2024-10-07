@@ -18,7 +18,8 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
    public static final int BATTERY_B_SLOT = 2;
    public static final int RESULT_SLOT = 3;
    public static final int SLOT_COUNT = 4;
-   public static final int DATA_COUNT = 6;
+   public static final int DATA_COUNT = 7;
+   public static final int START_BUTTON_ID = 0;
    private static final int INV_SLOT_START = 4;
    private static final int INV_SLOT_END = 31;
    private static final int USE_ROW_SLOT_START = 31;
@@ -154,5 +155,15 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
 
    public boolean isCharged() {
       return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_TIME_A) > 0 || this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_TIME_B) > 0;
+   }
+
+   @Override
+   public boolean clickMenuButton(Player pPlayer, int pId) {
+      if(pId == START_BUTTON_ID){
+         boolean started = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_STARTED) > 0;
+         this.setData(AbstractBloodAnalyzerBlockEntity.DATA_STARTED, started ? 0 : 1);
+         return true;
+      }
+      return false;
    }
 }
