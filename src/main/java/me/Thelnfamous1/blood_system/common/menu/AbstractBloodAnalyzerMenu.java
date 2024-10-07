@@ -178,4 +178,8 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
    public BloodAnalysisRecipe getRecipe(Level level){
       return this.quickCheck.getRecipeFor(this.container, level).orElse(null);
    }
+
+   public boolean isActivated() {
+      return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_ACTIVATED) > 0;
+   }
 }

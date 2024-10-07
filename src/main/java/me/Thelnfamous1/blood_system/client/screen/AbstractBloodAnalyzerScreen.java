@@ -28,7 +28,7 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
    public static final int START_BUTTON_WIDTH = 17;
    public static final int START_BUTTON_HEIGHT = 12;
    private final ResourceLocation texture;
-   private StartAnalysisButton startButton;
+   private StartAnalysisButton<T> startButton;
 
    public AbstractBloodAnalyzerScreen(T pMenu, Inventory pPlayerInventory, Component pTitle, ResourceLocation pTexture) {
       super(pMenu, pPlayerInventory, pTitle);
@@ -39,7 +39,7 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
    public void init() {
       super.init();
       this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
-      this.startButton = new StartAnalysisButton(this.leftPos + START_BUTTON_X_OFFSET, this.topPos + START_BUTTON_Y_OFFSET, START_BUTTON_WIDTH, START_BUTTON_HEIGHT,
+      this.startButton = new StartAnalysisButton<>(this, this.leftPos + START_BUTTON_X_OFFSET, this.topPos + START_BUTTON_Y_OFFSET, START_BUTTON_WIDTH, START_BUTTON_HEIGHT,
               Component.translatable(BloodSystemMod.translationKey("container", "blood_analyzer.start")),
               b -> {
                  if (this.menu.clickMenuButton(this.minecraft.player, AbstractBloodAnalyzerMenu.START_BUTTON_ID)) {

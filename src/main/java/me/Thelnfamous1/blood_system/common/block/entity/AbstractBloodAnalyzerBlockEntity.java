@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.block.AbstractBloodAnalyzerBlock;
+import me.Thelnfamous1.blood_system.common.config.BloodSystemConfig;
 import me.Thelnfamous1.blood_system.common.recipe.BloodAnalysisRecipe;
 import me.Thelnfamous1.blood_system.common.util.DebugFlags;
 import net.minecraft.core.BlockPos;
@@ -17,7 +18,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -29,7 +29,6 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.RecipeHolder;
 import net.minecraft.world.inventory.StackedContentsCompatible;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -117,7 +116,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    }
 
    public static boolean isBattery(ItemStack pStack) {
-      return pStack.is(ItemTags.LOGS) || pStack.is(ItemTags.PLANKS) || pStack.is(Items.STICK);
+      return BloodSystemConfig.SERVER.isBattery(pStack.getItem());
    }
 
    private boolean hasEnoughChargeToStartAnalysis() {
@@ -355,7 +354,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       if (battery.isEmpty()) {
          return 0;
       } else {
-         return battery.is(ItemTags.LOGS) ? 4 : battery.is(ItemTags.PLANKS) ? 2 : battery.is(Items.STICK) ? 1 : 0;
+         return BloodSystemConfig.SERVER.getBatteryCharge(battery.getItem());
       }
    }
 

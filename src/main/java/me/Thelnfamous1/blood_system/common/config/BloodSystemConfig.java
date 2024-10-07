@@ -5,8 +5,10 @@ import commoble.databuddy.config.ConfigHelper;
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.common.codec.UnboundedNavigableMapCodec;
 import me.Thelnfamous1.blood_system.common.util.DebugFlags;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class BloodSystemConfig {
     public static class Server {
         public static final Codec<NavigableMap<Integer, List<MobEffectData>>> BLOOD_LOSS_EFFECTS_CODEC = new UnboundedNavigableMapCodec<>(Codec.INT, Codec.list(MobEffectData.CODEC));
+        public static final Codec<Map<ResourceLocation, Integer>> BATTERY_CHARGES_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, Codec.INT);
         public final ForgeConfigSpec.IntValue bloodRegenMinFoodLevel;
         public final ForgeConfigSpec.DoubleValue bloodRegenFrequency;
         public final ForgeConfigSpec.DoubleValue bloodRegenAmount;
@@ -26,6 +29,8 @@ public class BloodSystemConfig {
         public final ForgeConfigSpec.DoubleValue bleedChanceWhenTakingDamage;
         public final ForgeConfigSpec.DoubleValue bleedChanceWhenTakingDamageExtra;
         public final ConfigHelper.ConfigObject<NavigableMap<Integer, List<MobEffectData>>> bloodLossEffects;
+        public final ConfigHelper.ConfigObject<Map<ResourceLocation, Integer>> batteryCharges;
+        private final Map<Item, Integer> parsedBatteryCharges = new HashMap<>();
 
         Server(ForgeConfigSpec.Builder builder) {
             builder.comment("Server configuration settings")
@@ -80,7 +85,27 @@ public class BloodSystemConfig {
                         }
                     });
 
+            this.batteryCharges = ConfigHelper.defineObject(
+                    builder.comment("The maximum charges each battery provides to a Blood Analyzer or Microscope when placed in a battery slot.")
+                            .translation(BloodSystemMod.translationKeySuffixed("configgui.batteryCharges"))
+                            .worldRestart(),
+                    "batteryCharges", BATTERY_CHARGES_CODEC, new HashMap<>(){
+                        {
+                            this.put(new ResourceLocation("zombie_extreme:batteries"), 1);
+                            this.put(new ResourceLocation("apocalypsenow:aabattery"), 2);
+                            this.put(new ResourceLocation("zombie_extreme:energy_battery"), 4);
+                        }
+                    });
+
             builder.pop();
+        }
+
+        public boolean isBattery(Item item){
+            return this.parsedBatteryCharges.containsKey(item);
+        }
+
+        public int getBatteryCharge(Item item){
+            return this.parsedBatteryCharges.getOrDefault(item, 0);
         }
     }
 
@@ -161,7 +186,20 @@ public class BloodSystemConfig {
         if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
             if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
                 BloodSystemMod.LOGGER.info("Loaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
+            parseBatteryCharges(false);
         }
+    }
+
+    private static void parseBatteryCharges(boolean reload) {
+        SERVER.parsedBatteryCharges.clear();
+        SERVER.batteryCharges.get().forEach((key, value) -> {
+            Optional<Item> parsedItem = Registry.ITEM.getOptional(key);
+            parsedItem.ifPresentOrElse(
+                    item -> SERVER.parsedBatteryCharges.put(item, value),
+                    () -> BloodSystemMod.LOGGER.error("Invalid item in batteryCharges: {}", key));
+        });
+        if(DebugFlags.DEBUG_BATTERY_CHARGES)
+            BloodSystemMod.LOGGER.info("{} batteryCharges map: {}", reload ? "Reloaded" : "Loaded", SERVER.batteryCharges.get());
     }
 
     @SubscribeEvent
@@ -169,6 +207,7 @@ public class BloodSystemConfig {
         if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
             if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
                 BloodSystemMod.LOGGER.info("Reloaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
+            parseBatteryCharges(true);
         }
     }
 
