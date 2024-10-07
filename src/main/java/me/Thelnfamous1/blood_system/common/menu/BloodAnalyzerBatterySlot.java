@@ -17,6 +17,6 @@ public class BloodAnalyzerBatterySlot extends Slot {
     */
    @Override
    public boolean mayPlace(ItemStack pStack) {
-      return this.menu.isFuel(pStack);
+      return this.menu.isBattery(pStack);
    }
 }

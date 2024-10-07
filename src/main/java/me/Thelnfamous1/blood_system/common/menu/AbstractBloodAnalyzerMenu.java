@@ -14,16 +14,17 @@ import net.minecraftforge.common.ForgeHooks;
 
 public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
    public static final int INGREDIENT_SLOT = 0;
-   public static final int FUEL_SLOT = 1;
-   public static final int RESULT_SLOT = 2;
-   public static final int SLOT_COUNT = 3;
-   public static final int DATA_COUNT = 4;
-   private static final int INV_SLOT_START = 3;
-   private static final int INV_SLOT_END = 30;
-   private static final int USE_ROW_SLOT_START = 30;
-   private static final int USE_ROW_SLOT_END = 39;
+   public static final int BATTERY_A_SLOT = 1;
+   public static final int BATTERY_B_SLOT = 2;
+   public static final int RESULT_SLOT = 3;
+   public static final int SLOT_COUNT = 4;
+   public static final int DATA_COUNT = 6;
+   private static final int INV_SLOT_START = 4;
+   private static final int INV_SLOT_END = 31;
+   private static final int USE_ROW_SLOT_START = 31;
+   private static final int USE_ROW_SLOT_END = 40;
    public static final int ANALYSIS_BAR_HEIGHT = 59;
-   public static final int BATTERY_POWER_WIDTH = 24;
+   public static final int BATTERY_CHARGE_WIDTH = 24;
    private final Container container;
    private final ContainerData data;
    protected final Level level;
@@ -42,7 +43,8 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
       this.data = pData;
       this.level = pPlayerInventory.player.level;
       this.addSlot(new Slot(pContainer, INGREDIENT_SLOT, 79, 17));
-      this.addSlot(new BloodAnalyzerBatterySlot(this, pContainer, FUEL_SLOT, 17, 17));
+      this.addSlot(new BloodAnalyzerBatterySlot(this, pContainer, BATTERY_A_SLOT, 17, 17));
+      this.addSlot(new BloodAnalyzerBatterySlot(this, pContainer, BATTERY_B_SLOT, 17, 38));
       this.addSlot(new BloodAnalyzerResultSlot(pPlayerInventory.player, pContainer, RESULT_SLOT, 79, 58));
 
       for(int i = 0; i < 3; ++i) {
@@ -77,19 +79,19 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
       if (slot != null && slot.hasItem()) {
          ItemStack itemInSlot = slot.getItem();
          quickMoveResult = itemInSlot.copy();
-         if (pIndex == 2) {
+         if (pIndex == RESULT_SLOT) {
             if (!this.moveItemStackTo(itemInSlot, INV_SLOT_START, USE_ROW_SLOT_END, true)) {
                return ItemStack.EMPTY;
             }
 
             slot.onQuickCraft(itemInSlot, quickMoveResult);
-         } else if (pIndex != 1 && pIndex != 0) {
-            if (this.canSmelt(itemInSlot)) {
-               if (!this.moveItemStackTo(itemInSlot, INGREDIENT_SLOT, FUEL_SLOT, false)) {
+         } else if (pIndex != BATTERY_B_SLOT && pIndex != BATTERY_A_SLOT && pIndex != INGREDIENT_SLOT) {
+            if (this.canAnalyze(itemInSlot)) {
+               if (!this.moveItemStackTo(itemInSlot, INGREDIENT_SLOT, BATTERY_A_SLOT, false)) {
                   return ItemStack.EMPTY;
                }
-            } else if (this.isFuel(itemInSlot)) {
-               if (!this.moveItemStackTo(itemInSlot, FUEL_SLOT, RESULT_SLOT, false)) {
+            } else if (this.isBattery(itemInSlot)) {
+               if (!this.moveItemStackTo(itemInSlot, BATTERY_A_SLOT, RESULT_SLOT, false)) {
                   return ItemStack.EMPTY;
                }
             } else if (pIndex >= INV_SLOT_START && pIndex < INV_SLOT_END) {
@@ -119,30 +121,38 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
       return quickMoveResult;
    }
 
-   protected boolean canSmelt(ItemStack pStack) {
+   protected boolean canAnalyze(ItemStack pStack) {
       return this.level.getRecipeManager().getRecipeFor((RecipeType<BloodAnalysisRecipe>)this.recipeType, new SimpleContainer(pStack), this.level).isPresent();
    }
 
-   protected boolean isFuel(ItemStack pStack) {
+   protected boolean isBattery(ItemStack pStack) {
       return ForgeHooks.getBurnTime(pStack, this.recipeType) > 0;
    }
 
-   public int getBurnProgress() {
-      int cookingProgress = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_COOKING_PROGRESS);
-      int cookingTotalTime = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_COOKING_TOTAL_TIME);
-      return cookingTotalTime != 0 && cookingProgress != 0 ? cookingProgress * ANALYSIS_BAR_HEIGHT / cookingTotalTime : 0;
+   public int getAnalysisProgress() {
+      int analysisProgress = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_ANALYSIS_PROGRESS);
+      int analysisTotalTime = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_ANALYSIS_TOTAL_TIME);
+      return analysisTotalTime != 0 && analysisProgress != 0 ? analysisProgress * ANALYSIS_BAR_HEIGHT / analysisTotalTime : 0;
    }
 
-   public int getLitProgress() {
-      int litDuration = this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_LIT_DURATION);
-      if (litDuration == 0) {
-         litDuration = AbstractBloodAnalyzerBlockEntity.BURN_TIME_STANDARD;
+   public int getChargeProgressA(){
+      return this.getChargeProgress(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_DURATION_A, AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_TIME_A);
+   }
+
+   public int getChargeProgressB(){
+      return this.getChargeProgress(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_DURATION_B, AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_TIME_B);
+   }
+
+   public int getChargeProgress(int chargeDurationId, int chargeTimeId) {
+      int chargeDuration = this.data.get(chargeDurationId);
+      if (chargeDuration == 0) {
+         chargeDuration = AbstractBloodAnalyzerBlockEntity.CHARGE_TIME_STANDARD;
       }
 
-      return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_LIT_TIME) * BATTERY_POWER_WIDTH / litDuration;
+      return this.data.get(chargeTimeId) * BATTERY_CHARGE_WIDTH / chargeDuration;
    }
 
-   public boolean isLit() {
-      return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_LIT_TIME) > 0;
+   public boolean isCharged() {
+      return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_TIME_A) > 0 || this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_TIME_B) > 0;
    }
 }
