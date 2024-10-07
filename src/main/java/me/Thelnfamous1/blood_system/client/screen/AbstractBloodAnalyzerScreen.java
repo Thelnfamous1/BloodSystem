@@ -16,11 +16,11 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
    public static final int ANALYSIS_BAR_U_OFFSET = 221;
    public static final int ANALYSIS_BAR_V_OFFSET = 0;
    public static final int ANALYSIS_BAR_WIDTH = 7;
-   public static final int BATTERY_CHARGE_A_X_OFFSET = 50;
+   public static final int BATTERY_CHARGE_A_X_OFFSET = 49;
    public static final int BATTERY_CHARGE_A_Y_OFFSET = 21;
-   public static final int BATTERY_CHARGE_B_X_OFFSET = 50;
+   public static final int BATTERY_CHARGE_B_X_OFFSET = 49;
    public static final int BATTERY_CHARGE_B_Y_OFFSET = 42;
-   public static final int BATTERY_CHARGE_U_OFFSET = 197;
+   public static final int BATTERY_CHARGE_U_OFFSET = 196;
    public static final int BATTERY_CHARGE_V_OFFSET = 0;
    public static final int BATTERY_CHARGE_HEIGHT = 15;
    public static final int START_BUTTON_X_OFFSET = 147;
@@ -46,8 +46,15 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
                     this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, AbstractBloodAnalyzerMenu.START_BUTTON_ID);
                  }
               });
-      this.startButton.active = this.menu.isCharged();
+      this.startButton.active = this.canUseStartButton();
       this.addRenderableWidget(this.startButton);
+   }
+
+   private boolean canUseStartButton() {
+      if(this.menu.isAnalyzing()){
+         return true;
+      }
+      return this.menu.hasEnoughChargeToStartAnalysis() && this.menu.getRecipe(this.minecraft.level) != null;
    }
 
    @Override
@@ -66,24 +73,24 @@ public abstract class AbstractBloodAnalyzerScreen<T extends AbstractBloodAnalyze
       int y = this.topPos;
       this.blit(pPoseStack, x, y, 0, 0, this.imageWidth, this.imageHeight);
       if (this.menu.isCharged()) {
-         this.drawLitProgress(pPoseStack, x, y, this.menu.getChargeProgressA(), BATTERY_CHARGE_A_X_OFFSET, BATTERY_CHARGE_A_Y_OFFSET);
-         this.drawLitProgress(pPoseStack, x, y, this.menu.getChargeProgressB(), BATTERY_CHARGE_B_X_OFFSET, BATTERY_CHARGE_B_Y_OFFSET);
+         this.drawChargeProgress(pPoseStack, x, y, this.menu.getChargeProgressA(), BATTERY_CHARGE_A_X_OFFSET, BATTERY_CHARGE_A_Y_OFFSET);
+         this.drawChargeProgress(pPoseStack, x, y, this.menu.getChargeProgressB(), BATTERY_CHARGE_B_X_OFFSET, BATTERY_CHARGE_B_Y_OFFSET);
       }
 
-      int burnProgress = this.menu.getAnalysisProgress();
+      int analysisProgress = this.menu.getAnalysisProgress();
       // Blood red, R=120, G=6, and B=6
       RenderSystem.setShaderColor(120.0F/256.0F, 6.0F/256.0F, 6.0F/256.0F, 1.0F);
-      this.blit(pPoseStack, x + ANALYSIS_BAR_X_OFFSET, y + ANALYSIS_BAR_Y_OFFSET, ANALYSIS_BAR_U_OFFSET, ANALYSIS_BAR_V_OFFSET, ANALYSIS_BAR_WIDTH, burnProgress);
+      this.blit(pPoseStack, x + ANALYSIS_BAR_X_OFFSET, y + ANALYSIS_BAR_Y_OFFSET, ANALYSIS_BAR_U_OFFSET, ANALYSIS_BAR_V_OFFSET, ANALYSIS_BAR_WIDTH, analysisProgress);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
-   private void drawLitProgress(PoseStack pPoseStack, int x, int y, int chargeProgress, int xOffset, int yOffset) {
+   private void drawChargeProgress(PoseStack pPoseStack, int x, int y, int chargeProgress, int xOffset, int yOffset) {
        this.blit(pPoseStack, x + xOffset, y + yOffset, BATTERY_CHARGE_U_OFFSET, BATTERY_CHARGE_V_OFFSET, chargeProgress, BATTERY_CHARGE_HEIGHT);
    }
 
    @Override
    protected void containerTick() {
       super.containerTick();
-      this.startButton.active = this.menu.isCharged();
+      this.startButton.active = this.canUseStartButton();
    }
 }

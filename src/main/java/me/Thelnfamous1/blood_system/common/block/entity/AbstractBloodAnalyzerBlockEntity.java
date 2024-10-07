@@ -17,6 +17,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -28,6 +29,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.RecipeHolder;
 import net.minecraft.world.inventory.StackedContentsCompatible;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -36,10 +38,10 @@ import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.SidedInvWrapper;
 
@@ -48,37 +50,31 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    public static final int SLOT_BATTERY_A = 1;
    public static final int SLOT_BATTERY_B = 2;
    public static final int SLOT_RESULT = 3;
+   public static final int MAX_CHARGE = 5;
+   public static final int MIN_CHARGE_TO_START = 3;
    private static final int[] SLOTS_FOR_UP = new int[]{0};
    private static final int[] SLOTS_FOR_DOWN = new int[]{3, 2, 1};
    private static final int[] SLOTS_FOR_SIDES = new int[]{1, 2};
-   public static final int DATA_STARTED = 0;
-   public static final int DATA_CHARGE_TIME_A = 1;
-   public static final int DATA_CHARGE_TIME_B = 2;
-   public static final int DATA_CHARGE_DURATION_A = 3;
-   public static final int DATA_CHARGE_DURATION_B = 4;
-   public static final int DATA_ANALYSIS_PROGRESS = 5;
-   public static final int DATA_ANALYSIS_TOTAL_TIME = 6;
-   public static final int NUM_DATA_VALUES = 7;
-   public static final int CHARGE_TIME_STANDARD = 200;
-   public static final int ANALYSIS_DECAY_SPEED = 2;
+   public static final int DATA_ACTIVATED = 0;
+   public static final int DATA_CHARGE_A = 1;
+   public static final int DATA_CHARGE_B = 2;
+   public static final int DATA_ANALYSIS_PROGRESS = 3;
+   public static final int DATA_ANALYSIS_TOTAL_TIME = 4;
+   public static final int NUM_DATA_VALUES = 5;
    private final RecipeType<? extends BloodAnalysisRecipe> recipeType;
    protected NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
-   boolean started;
-   int chargeTimeA;
-   int chargeTimeB;
-   int chargeDurationA;
-   int chargeDurationB;
+   boolean activated;
+   int chargeA;
+   int chargeB;
    int analysisProgress;
    int analysisTotalTime;
    protected final ContainerData dataAccess = new ContainerData() {
       @Override
       public int get(int id) {
           return switch (id) {
-             case DATA_STARTED -> AbstractBloodAnalyzerBlockEntity.this.started ? 1 : 0;
-             case DATA_CHARGE_TIME_A -> AbstractBloodAnalyzerBlockEntity.this.chargeTimeA;
-             case DATA_CHARGE_TIME_B -> AbstractBloodAnalyzerBlockEntity.this.chargeTimeB;
-             case DATA_CHARGE_DURATION_A -> AbstractBloodAnalyzerBlockEntity.this.chargeDurationA;
-             case DATA_CHARGE_DURATION_B -> AbstractBloodAnalyzerBlockEntity.this.chargeDurationB;
+             case DATA_ACTIVATED -> AbstractBloodAnalyzerBlockEntity.this.activated ? 1 : 0;
+             case DATA_CHARGE_A -> AbstractBloodAnalyzerBlockEntity.this.chargeA;
+             case DATA_CHARGE_B -> AbstractBloodAnalyzerBlockEntity.this.chargeB;
              case DATA_ANALYSIS_PROGRESS -> AbstractBloodAnalyzerBlockEntity.this.analysisProgress;
              case DATA_ANALYSIS_TOTAL_TIME -> AbstractBloodAnalyzerBlockEntity.this.analysisTotalTime;
              default -> 0;
@@ -88,20 +84,14 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       @Override
       public void set(int id, int value) {
          switch (id) {
-            case DATA_STARTED:
-               AbstractBloodAnalyzerBlockEntity.this.started = value > 0;
+            case DATA_ACTIVATED:
+               AbstractBloodAnalyzerBlockEntity.this.activated = value > 0;
                break;
-            case DATA_CHARGE_TIME_A:
-               AbstractBloodAnalyzerBlockEntity.this.chargeTimeA = value;
+            case DATA_CHARGE_A:
+               AbstractBloodAnalyzerBlockEntity.this.chargeA = value;
                break;
-            case DATA_CHARGE_TIME_B:
-               AbstractBloodAnalyzerBlockEntity.this.chargeTimeB = value;
-               break;
-            case DATA_CHARGE_DURATION_A:
-               AbstractBloodAnalyzerBlockEntity.this.chargeDurationA = value;
-               break;
-            case DATA_CHARGE_DURATION_B:
-               AbstractBloodAnalyzerBlockEntity.this.chargeDurationB = value;
+            case DATA_CHARGE_B:
+               AbstractBloodAnalyzerBlockEntity.this.chargeB = value;
                break;
             case DATA_ANALYSIS_PROGRESS:
                AbstractBloodAnalyzerBlockEntity.this.analysisProgress = value;
@@ -126,12 +116,36 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       this.recipeType = pRecipeType;
    }
 
-   public boolean isStarted(){
-      return this.started;
+   public static boolean isBattery(ItemStack pStack) {
+      return pStack.is(ItemTags.LOGS) || pStack.is(ItemTags.PLANKS) || pStack.is(Items.STICK);
+   }
+
+   private boolean hasEnoughChargeToStartAnalysis() {
+      return this.getTotalCharge() >= this.getMinimumChargeToStartAnalysis();
+   }
+
+   public boolean isAnalyzing() {
+      return this.analysisProgress > 0;
+   }
+
+   public boolean isActivated(){
+      return this.activated;
+   }
+
+   private boolean isFullyCharged(){
+      return this.chargeA >= this.getMaxCharge(DATA_CHARGE_A) && this.chargeB >= this.getMaxCharge(DATA_CHARGE_B);
    }
 
    private boolean isCharged() {
-      return this.chargeTimeA > 0 || this.chargeTimeB > 0;
+      return this.chargeA > 0 || this.chargeB > 0;
+   }
+
+   private int getTotalCharge(){
+      return this.chargeA + this.chargeB;
+   }
+
+   protected int getMinimumChargeToStartAnalysis() {
+      return MIN_CHARGE_TO_START;
    }
 
    @Override
@@ -139,13 +153,11 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       super.load(pTag);
       this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
       ContainerHelper.loadAllItems(pTag, this.items);
-      this.started = pTag.getBoolean("Started");
-      this.chargeTimeA = pTag.getInt("ChargeTimeA");
-      this.chargeTimeB = pTag.getInt("ChargeTimeB");
+      this.activated = pTag.getBoolean("Activated");
+      this.chargeA = pTag.getInt("ChargeA");
+      this.chargeB = pTag.getInt("ChargeB");
       this.analysisProgress = pTag.getInt("AnalysisTime");
       this.analysisTotalTime = pTag.getInt("AnalysisTimeTotal");
-      this.chargeDurationA = this.getChargeDuration(this.items.get(SLOT_BATTERY_A));
-      this.chargeDurationB = this.getChargeDuration(this.items.get(SLOT_BATTERY_B));
       CompoundTag recipesUsed = pTag.getCompound("RecipesUsed");
 
       for(String id : recipesUsed.getAllKeys()) {
@@ -157,9 +169,9 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    @Override
    protected void saveAdditional(CompoundTag pTag) {
       super.saveAdditional(pTag);
-      pTag.putBoolean("Started", this.started);
-      pTag.putInt("ChargeTimeA", this.chargeTimeA);
-      pTag.putInt("ChargeTimeB", this.chargeTimeB);
+      pTag.putBoolean("Activated", this.activated);
+      pTag.putInt("ChargeA", this.chargeA);
+      pTag.putInt("ChargeB", this.chargeB);
       pTag.putInt("AnalysisTime", this.analysisProgress);
       pTag.putInt("AnalysisTimeTotal", this.analysisTotalTime);
       ContainerHelper.saveAllItems(pTag, this.items);
@@ -176,61 +188,77 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       ItemStack batteryB = pBlockEntity.items.get(SLOT_BATTERY_B);
       boolean hasInput = !pBlockEntity.items.get(SLOT_INPUT).isEmpty();
       boolean hasBattery = !batteryA.isEmpty() || !batteryB.isEmpty();
-      if (pBlockEntity.isCharged() || hasBattery /*&& hasInput*/) {
+      if (pBlockEntity.isCharged() || hasBattery /*&& hasInput*/ || pBlockEntity.isAnalyzing()) {
          Recipe<?> recipe;
          if (hasInput) {
             recipe = pBlockEntity.quickCheck.getRecipeFor(pBlockEntity, pLevel).orElse(null);
          } else {
             recipe = null;
          }
+         if(recipe == null){
+            pBlockEntity.activated = false;
+         }
          if(DebugFlags.DEBUG_BLOOD_ANALYZER && hasInput){
             BloodSystemMod.LOGGER.info("Found recipe {} for {}, has battery? {}", recipe == null ? null : recipe.getId(), pBlockEntity.items.get(SLOT_INPUT), hasBattery);
          }
 
          int maxStackSize = pBlockEntity.getMaxStackSize();
-         if (pBlockEntity.chargeTimeA <= 0 || pBlockEntity.chargeTimeB <= 0) {
+         if (!pBlockEntity.isFullyCharged()) {
             changed = charge(pBlockEntity, batteryA, batteryB);
          }
 
-         if (pBlockEntity.isCharged() && pBlockEntity.canAnalyze(recipe, pBlockEntity.items, maxStackSize)) {
-            if(pBlockEntity.started){
-               // Consume stored charge
-               if (pBlockEntity.isCharged()) {
-                  if(pBlockEntity.chargeTimeA > 0){
-                     --pBlockEntity.chargeTimeA;
-                  } else if(pBlockEntity.chargeTimeB > 0){
-                     --pBlockEntity.chargeTimeB;
+         boolean canAnalyze = pBlockEntity.canAnalyze(recipe, pBlockEntity.items, maxStackSize);
+         boolean enoughCharge = pBlockEntity.hasEnoughChargeToStartAnalysis();
+         if ((enoughCharge || pBlockEntity.isAnalyzing()) && canAnalyze) {
+            if(pBlockEntity.activated){
+               // Consume required charge before analyzing
+               if(pBlockEntity.analysisProgress == 0){
+                  int requiredChargeRemaining = pBlockEntity.getMinimumChargeToStartAnalysis();
+                  int consumedChargeA = Math.min(pBlockEntity.chargeA, requiredChargeRemaining);
+                  requiredChargeRemaining -= consumedChargeA;
+                  pBlockEntity.chargeA -= consumedChargeA;
+                  if(requiredChargeRemaining > 0){
+                     int consumedChargeB = Math.min(pBlockEntity.chargeB, requiredChargeRemaining);
+                     requiredChargeRemaining -= consumedChargeB;
+                     pBlockEntity.chargeB -= consumedChargeB;
+                  }
+                  if(requiredChargeRemaining > 0){
+                     if(!FMLEnvironment.production){
+                        throw new IllegalStateException("Cannot have any charge remaining before beginning analysis!");
+                     } else{
+                        BloodSystemMod.LOGGER.error("{} still required {} charge for analysis, but began analysis anyway.", pBlockEntity, requiredChargeRemaining);
+                     }
                   }
                }
+
                // Progress analysis
                ++pBlockEntity.analysisProgress;
-               if (pBlockEntity.analysisProgress == pBlockEntity.analysisTotalTime) {
+               if (pBlockEntity.analysisProgress >= pBlockEntity.analysisTotalTime) {
                   pBlockEntity.analysisProgress = 0;
                   pBlockEntity.analysisTotalTime = getTotalAnalysisTime(pLevel, pBlockEntity);
                   if (pBlockEntity.analyze(recipe, pBlockEntity.items, maxStackSize)) {
                      pBlockEntity.setRecipeUsed(recipe);
                   }
+                  if(pBlockEntity.analysisTotalTime <= 0){
+                     pBlockEntity.activated = false;
+                  }
 
                   changed = true;
                }
             }
-         } else {
-            pBlockEntity.analysisProgress = 0;
+         } else{
+            if(!canAnalyze) pBlockEntity.analysisProgress = 0;
+            pBlockEntity.activated = false;
          }
       }
-      /*
-      else if (!pBlockEntity.isCharged() && pBlockEntity.analysisProgress > 0) {
-         pBlockEntity.analysisProgress = Mth.clamp(pBlockEntity.analysisProgress - ANALYSIS_DECAY_SPEED, 0, pBlockEntity.analysisTotalTime);
-      }
-       */
 
       // started, charged -> on
       // started, uncharged -> off
       // not started, charged -> off
       // not started, uncharged -> off
-      if(wasCharged != pBlockEntity.isCharged() || pState.getValue(AbstractBloodAnalyzerBlock.LIT) != pBlockEntity.started) {
+      if(wasCharged != pBlockEntity.isCharged() || pState.getValue(AbstractBloodAnalyzerBlock.LIT) != pBlockEntity.activated) {
          changed = true;
-         pState = pState.setValue(AbstractBloodAnalyzerBlock.LIT, pBlockEntity.started && pBlockEntity.isCharged());
+         pState = pState.setValue(AbstractBloodAnalyzerBlock.LIT, pBlockEntity.activated && pBlockEntity.isCharged());
          pLevel.setBlock(pPos, pState, 3);
       }
 
@@ -241,19 +269,19 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    }
 
    private static boolean charge(AbstractBloodAnalyzerBlockEntity pBlockEntity, ItemStack batteryA, ItemStack batteryB) {
-      int batteryACharge = pBlockEntity.getChargeDuration(batteryA);
-      int batteryBCharge = pBlockEntity.getChargeDuration(batteryB);
+      int batteryACharge = pBlockEntity.getTotalCharge(batteryA);
+      int batteryBCharge = pBlockEntity.getTotalCharge(batteryB);
       boolean chargedA = false;
       boolean chargedB = false;
-      if(pBlockEntity.chargeTimeA <= 0){
+      int maxChargeA = pBlockEntity.getMaxCharge(SLOT_BATTERY_A);
+      if(pBlockEntity.chargeA < maxChargeA){
          chargedA = true;
-         pBlockEntity.chargeTimeA = batteryACharge;
-         pBlockEntity.chargeDurationA = pBlockEntity.chargeTimeA;
+         pBlockEntity.chargeA = Mth.clamp(pBlockEntity.chargeA + batteryACharge, 0, maxChargeA);
       }
-      if(pBlockEntity.chargeTimeB <= 0){
+      int maxChargeB = pBlockEntity.getMaxCharge(SLOT_BATTERY_B);
+      if(pBlockEntity.chargeB < maxChargeB){
          chargedB = true;
-         pBlockEntity.chargeTimeB = batteryBCharge;
-         pBlockEntity.chargeDurationB = pBlockEntity.chargeTimeB;
+         pBlockEntity.chargeB = Mth.clamp(pBlockEntity.chargeB + batteryBCharge, 0, maxChargeB);
       }
       if (pBlockEntity.isCharged()) {
          if (chargedA && batteryA.hasCraftingRemainingItem())
@@ -277,6 +305,10 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
          return true;
       }
       return false;
+   }
+
+   protected int getMaxCharge(int slot) {
+      return MAX_CHARGE;
    }
 
    private boolean canAnalyze(@Nullable Recipe<?> pRecipe, NonNullList<ItemStack> pStacks, int pStackSize) {
@@ -319,20 +351,20 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       }
    }
 
-   protected int getChargeDuration(ItemStack pFuel) {
-      if (pFuel.isEmpty()) {
+   protected int getTotalCharge(ItemStack battery) {
+      if (battery.isEmpty()) {
          return 0;
       } else {
-         return ForgeHooks.getBurnTime(pFuel, this.recipeType);
+         return battery.is(ItemTags.LOGS) ? 4 : battery.is(ItemTags.PLANKS) ? 2 : battery.is(Items.STICK) ? 1 : 0;
       }
    }
 
    private static int getTotalAnalysisTime(Level pLevel, AbstractBloodAnalyzerBlockEntity pBlockEntity) {
-      return pBlockEntity.quickCheck.getRecipeFor(pBlockEntity, pLevel).map(/*BloodAnalysisRecipe::getCookingTime*/r -> CHARGE_TIME_STANDARD).orElse(CHARGE_TIME_STANDARD);
+      return pBlockEntity.quickCheck.getRecipeFor(pBlockEntity, pLevel).map(r -> pBlockEntity.getDefaultAnalysisTime()).orElse(0);
    }
 
-   public static boolean isFuel(ItemStack pStack) {
-      return ForgeHooks.getBurnTime(pStack, null) > 0;
+   protected int getDefaultAnalysisTime(){
+      return 100 /*2 * 60 * 20*/;
    }
 
    @Override
@@ -446,7 +478,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       } else if (pIndex != SLOT_BATTERY_A && pIndex != SLOT_BATTERY_B) {
          return true;
       } else {
-          return ForgeHooks.getBurnTime(pStack, this.recipeType) > 0;
+          return isBattery(pStack);
       }
    }
 
