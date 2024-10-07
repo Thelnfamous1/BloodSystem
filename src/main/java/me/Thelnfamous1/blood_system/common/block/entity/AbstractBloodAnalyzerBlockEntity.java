@@ -517,7 +517,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       for(Object2IntMap.Entry<ResourceLocation> entry : this.recipesUsed.object2IntEntrySet()) {
          pLevel.getRecipeManager().byKey(entry.getKey()).ifPresent((recipe) -> {
             recipes.add(recipe);
-            createExperience(pLevel, pPopVec, entry.getIntValue(), /*((BloodAnalysisRecipe)recipe).getExperience()*/1);
+            //createExperience(pLevel, pPopVec, entry.getIntValue(), /*((BloodAnalysisRecipe)recipe).getExperience()*/1);
          });
       }
 
