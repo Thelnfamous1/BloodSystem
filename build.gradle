@@ -5,10 +5,10 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'org.spongepowered.mixin' version '0.7.+'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    //id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
-apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'java' // java plugin is needed for the shadow plugin to work
+//apply plugin: 'com.github.johnrengelman.shadow'
+//apply plugin: 'java' // java plugin is needed for the shadow plugin to work
 
 version = "${minecraft_version}-${mod_version}"
 group = mod_group_id
@@ -187,9 +187,11 @@ repositories {
     }
 }
 
+/*
 configurations {
     shade
 }
+ */
 
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
@@ -229,11 +231,16 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
+    /*
     implementation fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}")
     shade fg.deobf("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}:config")
+     */
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}")) {
         jarJar.ranged(it, "[${mixin_extras_version},)")
+    }
+    implementation(jarJar("commoble.databuddy:databuddy-${databuddy_branch}:${databuddy_version}")) {
+        jarJar.ranged(it, "[${databuddy_version},)")
     }
     // Mods
     implementation fg.deobf("curse.maven:apocalypse-now-448410:5783136")
@@ -284,6 +291,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 
+/*
 shadowJar {
     archiveClassifier = ''
     configurations = [project.configurations.shade]
@@ -298,14 +306,17 @@ tasks.configureEach {
         mustRunAfter(tasks.shadowJar)
     }
 }
+ */
 
+/*
 // this replaces jar.finalizedBy('reobfJar') in the standard forge mod buildscript
 tasks.build.dependsOn reobfShadowJar
 jar.finalizedBy('reobfShadowJar')
+ */
 
 // Example configuration to allow publishing using the maven-publish plugin
 // This is the preferred method to reobfuscate your jar file
-//jar.finalizedBy('reobfJar')
+jar.finalizedBy('reobfJar')
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
 // publish.dependsOn('reobfJar')
 
