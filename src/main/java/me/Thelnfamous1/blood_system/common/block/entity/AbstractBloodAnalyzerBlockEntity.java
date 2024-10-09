@@ -50,7 +50,6 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
    public static final int SLOT_BATTERY_B = 2;
    public static final int SLOT_RESULT = 3;
    public static final int MAX_CHARGE = 5;
-   public static final int MIN_CHARGE_TO_START = 3;
    private static final int[] SLOTS_FOR_UP = new int[]{0};
    private static final int[] SLOTS_FOR_DOWN = new int[]{3, 2, 1};
    private static final int[] SLOTS_FOR_SIDES = new int[]{1, 2};
@@ -143,11 +142,9 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       return this.chargeA + this.chargeB;
    }
 
-   protected int getMinimumChargeToStartAnalysis() {
-      return MIN_CHARGE_TO_START;
-   }
+   protected abstract int getMinimumChargeToStartAnalysis();
 
-   @Override
+    @Override
    public void load(CompoundTag pTag) {
       super.load(pTag);
       this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
@@ -362,9 +359,7 @@ public abstract class AbstractBloodAnalyzerBlockEntity extends BaseContainerBloc
       return pBlockEntity.quickCheck.getRecipeFor(pBlockEntity, pLevel).map(r -> pBlockEntity.getDefaultAnalysisTime()).orElse(0);
    }
 
-   protected int getDefaultAnalysisTime(){
-      return 100 /*2 * 60 * 20*/;
-   }
+   protected abstract int getDefaultAnalysisTime();
 
    @Override
    public int[] getSlotsForFace(Direction pSide) {

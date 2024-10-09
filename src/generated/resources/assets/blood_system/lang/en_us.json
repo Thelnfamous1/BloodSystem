@@ -1,6 +1,7 @@
 {
   "attribute.blood_system.max_blood": "Max Blood",
   "block.blood_system.blood_analyzer": "Blood Analyzer",
+  "block.blood_system.microscope": "Microscope",
   "blood_type.blood_system": "Blood Type",
   "blood_type.blood_system.A+": "A+",
   "blood_type.blood_system.A-": "A-",
@@ -19,6 +20,8 @@
   "commands.blood_system.missing": "%s is missing their Blood System data",
   "container.blood_system.blood_analyzer": "Blood Analyzer",
   "container.blood_system.blood_analyzer.start": "Start",
+  "container.blood_system.microscope": "Microscope",
+  "container.blood_system.microscope.start": "Start",
   "effect.blood_system.bleeding": "Bleeding",
   "effect.blood_system.circulation": "Circulation",
   "effect.blood_system.transfusion": "Transfusion",

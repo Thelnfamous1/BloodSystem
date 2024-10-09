@@ -1,0 +1,7 @@
+{
+  "parent": "blood_system:block/microscope",
+  "textures": {
+    "0": "blood_system:block/microscope_on",
+    "particle": "blood_system:block/microscope_on"
+  }
+}

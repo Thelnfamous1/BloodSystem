@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=east,lit=false": {
+      "model": "blood_system:block/microscope",
+      "y": 270
+    },
+    "facing=east,lit=true": {
+      "model": "blood_system:block/microscope_on",
+      "y": 270
+    },
+    "facing=north,lit=false": {
+      "model": "blood_system:block/microscope",
+      "y": 180
+    },
+    "facing=north,lit=true": {
+      "model": "blood_system:block/microscope_on",
+      "y": 180
+    },
+    "facing=south,lit=false": {
+      "model": "blood_system:block/microscope"
+    },
+    "facing=south,lit=true": {
+      "model": "blood_system:block/microscope_on"
+    },
+    "facing=west,lit=false": {
+      "model": "blood_system:block/microscope",
+      "y": 90
+    },
+    "facing=west,lit=true": {
+      "model": "blood_system:block/microscope_on",
+      "y": 90
+    }
+  }
+}

@@ -2,8 +2,8 @@ package me.Thelnfamous1.blood_system.common.datagen;
 
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.client.BloodSystemModClient;
-import me.Thelnfamous1.blood_system.common.block.AbstractBloodAnalyzerBlock;
 import me.Thelnfamous1.blood_system.common.block.entity.BloodAnalyzerBlockEntity;
+import me.Thelnfamous1.blood_system.common.block.entity.MicroscopeBlockEntity;
 import me.Thelnfamous1.blood_system.common.capability.BloodType;
 import me.Thelnfamous1.blood_system.common.command.BloodSystemCommands;
 import me.Thelnfamous1.blood_system.common.registries.*;
@@ -13,12 +13,15 @@ import net.minecraft.data.recipes.SpecialRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.client.model.generators.*;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.data.LanguageProvider;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -47,6 +50,7 @@ public class BloodSystemDatagen {
                 this.add(ModItems.BLOOD_BAG_AND_NEEDLE.get().getDescriptionId(), "Blood Bag and Needle");
                 this.add(ModItems.SYRINGE.get().getDescriptionId(), "Syringe");
                 this.add(ModBlocks.BLOOD_ANALYZER.get().getDescriptionId(), "Blood Analyzer");
+                this.add(ModBlocks.MICROSCOPE.get().getDescriptionId(), "Microscope");
 
                 this.add(BloodType.getCaption().getString(), "Blood Type");
                 for(BloodType bloodType : BloodType.values()){
@@ -63,20 +67,20 @@ public class BloodSystemDatagen {
 
                 this.add(BloodAnalyzerBlockEntity.NAME_KEY, "Blood Analyzer");
                 this.add(BloodAnalyzerBlockEntity.START_BUTTON_KEY, "Start");
+                this.add(MicroscopeBlockEntity.NAME_KEY, "Microscope");
+                this.add(MicroscopeBlockEntity.START_BUTTON_KEY, "Start");
             }
         });
-        event.getExistingFileHelper().trackGenerated(ModItems.VEINAMITOL.getId(), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(ModItems.NEEDLE.getId(), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(ModItems.BLOOD_BAG.getId(), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(BloodSystemMod.location(ModItems.BLOOD_BAG.getId().getPath() + "_filled"), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(ModItems.BLOOD_BAG_AND_NEEDLE.getId(), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(BloodSystemMod.location(ModItems.BLOOD_BAG_AND_NEEDLE.getId().getPath() + "_filled"), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(ModItems.SYRINGE.getId(), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(BloodSystemMod.location(ModItems.SYRINGE.getId().getPath() + "_filled"), ITEM_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(ModBlocks.BLOOD_ANALYZER.getId(), BLOCK_TEXTURE_RESOURCE);
-        event.getExistingFileHelper().trackGenerated(BloodSystemMod.location(ModBlocks.BLOOD_ANALYZER.getId().getPath() + "_on"), BLOCK_TEXTURE_RESOURCE);
+        ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
+        existingFileHelper.trackGenerated(ModItems.VEINAMITOL.getId(), ITEM_TEXTURE_RESOURCE);
+        existingFileHelper.trackGenerated(ModItems.NEEDLE.getId(), ITEM_TEXTURE_RESOURCE);
+        trackBloodFillableItemTexture(existingFileHelper, ModItems.BLOOD_BAG);
+        trackBloodFillableItemTexture(existingFileHelper, ModItems.BLOOD_BAG_AND_NEEDLE);
+        trackBloodFillableItemTexture(existingFileHelper, ModItems.SYRINGE);
+        trackBloodAnalyzerBlockTexture(existingFileHelper, ModBlocks.BLOOD_ANALYZER);
+        trackBloodAnalyzerBlockTexture(existingFileHelper, ModBlocks.MICROSCOPE);
 
-        event.getGenerator().addProvider(event.includeClient(), new ItemModelProvider(event.getGenerator(), BloodSystemMod.MODID, event.getExistingFileHelper()) {
+        event.getGenerator().addProvider(event.includeClient(), new ItemModelProvider(event.getGenerator(), BloodSystemMod.MODID, existingFileHelper) {
             @Override
             protected void registerModels() {
                 this.basicItem(ModItems.VEINAMITOL.get());
@@ -84,6 +88,12 @@ public class BloodSystemDatagen {
                 this.bloodFillableItem(ModItems.BLOOD_BAG.get());
                 this.bloodFillableItem(ModItems.BLOOD_BAG_AND_NEEDLE.get());
                 this.bloodFillableItem(ModItems.SYRINGE.get());
+                this.withBlockParent(ModItems.BLOOD_ANALYZER_ITEM, ModBlocks.BLOOD_ANALYZER);
+                this.withBlockParent(ModItems.MICROSCOPE_ITEM, ModBlocks.MICROSCOPE);
+            }
+
+            private void withBlockParent(RegistryObject<Item> blockItemRegistryObject, RegistryObject<Block> blockRegistryObject) {
+                this.getBuilder(blockItemRegistryObject.getId().getPath()).parent(new ModelFile.ExistingModelFile(new ResourceLocation(blockRegistryObject.getId().getNamespace(), BLOCK_FOLDER + "/" + blockRegistryObject.getId().getPath()), this.existingFileHelper));
             }
 
             private void bloodFillableItem(Item item) {
@@ -109,32 +119,52 @@ public class BloodSystemDatagen {
             }
         });
 
-        event.getGenerator().addProvider(event.includeClient(), new BlockModelProvider(event.getGenerator(), BloodSystemMod.MODID, event.getExistingFileHelper()) {
+        event.getGenerator().addProvider(event.includeClient(), new BlockModelProvider(event.getGenerator(), BloodSystemMod.MODID, existingFileHelper) {
             @Override
             protected void registerModels() {
-                ResourceLocation onModel = BloodSystemMod.location(ModBlocks.BLOOD_ANALYZER.getId().getPath() + "_on");
+                this.offOnModel(ModBlocks.BLOOD_ANALYZER);
+                this.offOnModel(ModBlocks.MICROSCOPE);
+            }
+
+            private void offOnModel(RegistryObject<Block> registryObject) {
+                ResourceLocation onModel = new ResourceLocation(registryObject.getId().getNamespace(), registryObject.getId().getPath() + "_on");
                 ResourceLocation onTexture = new ResourceLocation(onModel.getNamespace(), "block/" + onModel.getPath());
-                this.withExistingParent(onModel.toString(), ModBlocks.BLOOD_ANALYZER.getId())
+                this.withExistingParent(onModel.toString(), registryObject.getId())
                         .texture("0", onTexture)
                         .texture("particle", onTexture);
             }
         });
 
-        event.getGenerator().addProvider(event.includeClient(), new BlockStateProvider(event.getGenerator(), BloodSystemMod.MODID, event.getExistingFileHelper()) {
+        event.getGenerator().addProvider(event.includeClient(), new BlockStateProvider(event.getGenerator(), BloodSystemMod.MODID, existingFileHelper) {
             @Override
             protected void registerStatesAndModels() {
-                ModelFile.ExistingModelFile bloodAnalyzer = this.models().getExistingFile(ModBlocks.BLOOD_ANALYZER.getId());
-                ModelFile.ExistingModelFile bloodAnalyzerOn = this.models().getExistingFile(BloodSystemMod.location(ModBlocks.BLOOD_ANALYZER.getId().getPath() + "_on"));
-                this.horizontalBlock(ModBlocks.BLOOD_ANALYZER.get(), blockstate -> blockstate.getValue(AbstractBloodAnalyzerBlock.LIT) ? bloodAnalyzerOn : bloodAnalyzer);
+                this.offOnHorizontalFacingBlock(ModBlocks.BLOOD_ANALYZER, 180);
+                this.offOnHorizontalFacingBlock(ModBlocks.MICROSCOPE, 0);
+            }
+
+            private void offOnHorizontalFacingBlock(RegistryObject<Block> registryObject, int angleOffset) {
+                ModelFile.ExistingModelFile offModel = this.models().getExistingFile(registryObject.getId());
+                ModelFile.ExistingModelFile onModel = this.models().getExistingFile(new ResourceLocation(registryObject.getId().getNamespace(), registryObject.getId().getPath() + "_on"));
+                this.horizontalBlock(registryObject.get(), blockstate -> blockstate.getValue(BlockStateProperties.LIT) ? onModel : offModel, angleOffset);
             }
         });
 
         event.getGenerator().addProvider(event.includeServer(), new RecipeProvider(event.getGenerator()){
             @Override
             protected void buildCraftingRecipes(Consumer<FinishedRecipe> pFinishedRecipeConsumer) {
-                SpecialRecipeBuilder.special(ModRecipeSerializers.BLOOD_BAG_AND_NEEDLE.get()).save(pFinishedRecipeConsumer, BloodSystemMod.location("blood_bag_and_needle").toString());
-                SpecialRecipeBuilder.special(ModRecipeSerializers.BLOOD_ANALYSIS.get()).save(pFinishedRecipeConsumer, BloodSystemMod.location("blood_analysis").toString());
+                SpecialRecipeBuilder.special(ModRecipeSerializers.BLOOD_BAG_AND_NEEDLE.get()).save(pFinishedRecipeConsumer, ModItems.BLOOD_BAG_AND_NEEDLE.getId().toString());
+                SpecialRecipeBuilder.special(ModRecipeSerializers.BLOOD_ANALYSIS.get()).save(pFinishedRecipeConsumer, ModRecipeSerializers.BLOOD_ANALYSIS.getId().toString());
             }
         });
+    }
+
+    private static void trackBloodAnalyzerBlockTexture(ExistingFileHelper existingFileHelper, RegistryObject<Block> registryObject) {
+        existingFileHelper.trackGenerated(registryObject.getId(), BLOCK_TEXTURE_RESOURCE);
+        existingFileHelper.trackGenerated(new ResourceLocation(registryObject.getId().getNamespace(), registryObject.getId().getPath() + "_on"), BLOCK_TEXTURE_RESOURCE);
+    }
+
+    private static void trackBloodFillableItemTexture(ExistingFileHelper existingFileHelper, RegistryObject<Item> registryObject) {
+        existingFileHelper.trackGenerated(registryObject.getId(), ITEM_TEXTURE_RESOURCE);
+        existingFileHelper.trackGenerated(new ResourceLocation(registryObject.getId().getNamespace(), registryObject.getId().getPath() + "_filled"), ITEM_TEXTURE_RESOURCE);
     }
 }

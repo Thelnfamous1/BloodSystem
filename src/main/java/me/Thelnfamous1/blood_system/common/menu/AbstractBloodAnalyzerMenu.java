@@ -157,8 +157,10 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
 
    public boolean hasEnoughChargeToStartAnalysis(){
       return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_A) + this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_CHARGE_B)
-              >= AbstractBloodAnalyzerBlockEntity.MIN_CHARGE_TO_START;
+              >= this.getMinimumChargeToStartAnalysis();
    }
+
+   protected abstract int getMinimumChargeToStartAnalysis();
 
    public boolean isAnalyzing(){
       return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_ANALYSIS_PROGRESS) > 0;
@@ -181,5 +183,11 @@ public abstract class AbstractBloodAnalyzerMenu extends AbstractContainerMenu {
 
    public boolean isActivated() {
       return this.data.get(AbstractBloodAnalyzerBlockEntity.DATA_ACTIVATED) > 0;
+   }
+
+   @Override
+   public void removed(Player pPlayer) {
+      super.removed(pPlayer);
+      this.container.stopOpen(pPlayer);
    }
 }

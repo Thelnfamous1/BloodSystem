@@ -2,6 +2,7 @@ package me.Thelnfamous1.blood_system.client;
 
 import me.Thelnfamous1.blood_system.BloodSystemMod;
 import me.Thelnfamous1.blood_system.client.screen.BloodAnalyzerScreen;
+import me.Thelnfamous1.blood_system.client.screen.MicroscopeScreen;
 import me.Thelnfamous1.blood_system.common.item.BloodFillableItem;
 import me.Thelnfamous1.blood_system.common.network.BloodSystemNetwork;
 import me.Thelnfamous1.blood_system.common.network.ServerboundRequestBloodSync;
@@ -47,6 +48,7 @@ public class BloodSystemModClient {
             event.enqueueWork(() -> ItemProperties.register(ModItems.BLOOD_BAG.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
             event.enqueueWork(() -> ItemProperties.register(ModItems.BLOOD_BAG_AND_NEEDLE.get(), BLOOD_FILLED_ITEM_PROPERTY, ModloadingEvents::getBloodFilled));
             event.enqueueWork(() -> MenuScreens.register(ModMenuTypes.BLOOD_ANALYZER.get(), BloodAnalyzerScreen::new));
+            event.enqueueWork(() -> MenuScreens.register(ModMenuTypes.MICROSCOPE.get(), MicroscopeScreen::new));
         }
 
         private static float getBloodFilled(ItemStack pStack, ClientLevel level, LivingEntity entity, long seed) {
