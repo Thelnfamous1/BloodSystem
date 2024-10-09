@@ -5,15 +5,20 @@ import me.Thelnfamous1.blood_system.client.BloodSystemModClient;
 import me.Thelnfamous1.blood_system.common.capability.BloodCapabilityProvider;
 import me.Thelnfamous1.blood_system.common.command.BloodSystemCommands;
 import me.Thelnfamous1.blood_system.common.config.BloodSystemConfig;
+import me.Thelnfamous1.blood_system.common.config.ConsumeType;
 import me.Thelnfamous1.blood_system.common.datagen.BloodSystemDatagen;
 import me.Thelnfamous1.blood_system.common.network.BloodSystemNetwork;
 import me.Thelnfamous1.blood_system.common.registries.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -55,8 +60,26 @@ public class BloodSystemMod {
         ModItems.ITEMS.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(BloodCapabilityProvider.class);
         MinecraftForge.EVENT_BUS.register(BloodSystemCommands.class);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, (PlayerInteractEvent.RightClickItem event) -> {
+            LivingEntity user = event.getEntity();
+            ItemStack item = event.getItemStack();
+            onBandageUsed(item, user, ConsumeType.RIGHT_CLICK);
+        });
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, (LivingEntityUseItemEvent.Finish event) -> {
+            LivingEntity user = event.getEntity();
+            ItemStack item = event.getItem();
+            onBandageUsed(item, user, ConsumeType.FINISH);
+        });
         if(FMLEnvironment.dist.isClient()){
             BloodSystemModClient.init(modEventBus);
+        }
+    }
+
+    private static void onBandageUsed(ItemStack item, LivingEntity user, ConsumeType consumeType) {
+        if(BloodSystemConfig.SERVER.isBandage(item.getItem()) && BloodSystemConfig.SERVER.getBandageConsumeType(item.getItem()) == consumeType){
+            if(!user.getLevel().isClientSide && user.hasEffect(ModMobEffects.BLEEDING.get())){
+                user.removeEffect(ModMobEffects.BLEEDING.get());
+            }
         }
     }
 

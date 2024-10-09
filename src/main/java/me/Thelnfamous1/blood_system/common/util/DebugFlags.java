@@ -10,4 +10,5 @@ public class DebugFlags {
     public static final boolean DEBUG_BLOOD_ANALYZER = !FMLEnvironment.production;
     public static final boolean DEBUG_MICROSCOPE = !FMLEnvironment.production;
     public static final boolean DEBUG_BATTERY_CHARGES = !FMLEnvironment.production;
+    public static final boolean DEBUG_BANDAGES = !FMLEnvironment.production;
 }

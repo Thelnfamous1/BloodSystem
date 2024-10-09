@@ -13,6 +13,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ public class BloodSystemConfig {
     public static class Server {
         public static final Codec<NavigableMap<Integer, List<MobEffectData>>> BLOOD_LOSS_EFFECTS_CODEC = new UnboundedNavigableMapCodec<>(Codec.INT, Codec.list(MobEffectData.CODEC));
         public static final Codec<Map<ResourceLocation, Integer>> BATTERY_CHARGES_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, Codec.INT);
+        public static final Codec<Map<ResourceLocation, ConsumeType>> BANDAGES_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, ConsumeType.CODEC);
         public final ForgeConfigSpec.IntValue bloodRegenMinFoodLevel;
         public final ForgeConfigSpec.DoubleValue bloodRegenFrequency;
         public final ForgeConfigSpec.DoubleValue bloodRegenAmount;
@@ -31,6 +33,8 @@ public class BloodSystemConfig {
         public final ConfigHelper.ConfigObject<NavigableMap<Integer, List<MobEffectData>>> bloodLossEffects;
         public final ConfigHelper.ConfigObject<Map<ResourceLocation, Integer>> batteryCharges;
         private final Map<Item, Integer> parsedBatteryCharges = new HashMap<>();
+        public final ConfigHelper.ConfigObject<Map<ResourceLocation, ConsumeType>> bandages;
+        private final Map<Item, ConsumeType> parsedBandages = new HashMap<>();
 
         Server(ForgeConfigSpec.Builder builder) {
             builder.comment("Server configuration settings")
@@ -67,7 +71,7 @@ public class BloodSystemConfig {
                     .defineInRange("bleedChanceWhenTakingDamage", 10.0, 0, 100);
 
             this.bleedChanceWhenTakingDamageExtra = builder
-                    .comment("The additional chance, per additional full heart of damage taken, to have the Bleed status effect applied.")
+                    .comment("The additional chance, per additional full heart of damage taken, to have the Bleeding status effect applied.")
                     .translation(BloodSystemMod.translationKeySuffixed("configgui.bleedChanceWhenTakingDamageExtra"))
                     .worldRestart()
                     .defineInRange("bleedChanceWhenTakingDamageExtra", 5.0, 0, 100);
@@ -97,6 +101,17 @@ public class BloodSystemConfig {
                         }
                     });
 
+            this.bandages = ConfigHelper.defineObject(
+                    builder.comment("The bandages that remove an active Bleeding status effect when consumed.")
+                            .translation(BloodSystemMod.translationKeySuffixed("configgui.bandages"))
+                            .worldRestart(),
+                    "bandages", BANDAGES_CODEC, new HashMap<>(){
+                        {
+                            this.put(new ResourceLocation("zombie_extreme:bandage"), ConsumeType.FINISH);
+                            this.put(new ResourceLocation("apocalypsenow:bandage"), ConsumeType.RIGHT_CLICK);
+                        }
+                    });
+
             builder.pop();
         }
 
@@ -106,6 +121,15 @@ public class BloodSystemConfig {
 
         public int getBatteryCharge(Item item){
             return this.parsedBatteryCharges.getOrDefault(item, 0);
+        }
+
+        public boolean isBandage(Item item) {
+            return this.parsedBandages.containsKey(item);
+        }
+
+        @Nullable
+        public ConsumeType getBandageConsumeType(Item item){
+            return this.parsedBandages.get(item);
         }
     }
 
@@ -187,6 +211,7 @@ public class BloodSystemConfig {
             if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
                 BloodSystemMod.LOGGER.info("Loaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
             parseBatteryCharges(false);
+            parseBandages(false);
         }
     }
 
@@ -202,12 +227,25 @@ public class BloodSystemConfig {
             BloodSystemMod.LOGGER.info("{} batteryCharges map: {}", reload ? "Reloaded" : "Loaded", SERVER.batteryCharges.get());
     }
 
+    private static void parseBandages(boolean reload) {
+        SERVER.parsedBandages.clear();
+        SERVER.bandages.get().forEach((key, value) -> {
+            Optional<Item> parsedItem = Registry.ITEM.getOptional(key);
+            parsedItem.ifPresentOrElse(
+                    item -> SERVER.parsedBandages.put(item, value),
+                    () -> BloodSystemMod.LOGGER.error("Invalid item in bandages: {}", key));
+        });
+        if(DebugFlags.DEBUG_BANDAGES)
+            BloodSystemMod.LOGGER.info("{} bandages map: {}", reload ? "Reloaded" : "Loaded", SERVER.bandages.get());
+    }
+
     @SubscribeEvent
     public static void onFileChange(final ModConfigEvent.Reloading configEvent) {
         if(configEvent.getConfig().getSpec() == serverSpec && serverSpec.isLoaded()){
             if(DebugFlags.DEBUG_BLOOD_LOSS_EFFECTS)
                 BloodSystemMod.LOGGER.info("Reloaded bloodLossEffects map: {}", getLegibleBloodLossEffects());
             parseBatteryCharges(true);
+            parseBandages(true);
         }
     }
 

@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "blood_system.refmap.json",
   "mixins": [
+    "DynamicOpsMixin",
     "ItemStackMixin",
     "LivingEntityAccessor",
     "TomlConfigOpsMixin"
