@@ -30,11 +30,16 @@ public class BloodSystemConfig {
         public final ForgeConfigSpec.DoubleValue bloodLossWhenTakingDamage;
         public final ForgeConfigSpec.DoubleValue bleedChanceWhenTakingDamage;
         public final ForgeConfigSpec.DoubleValue bleedChanceWhenTakingDamageExtra;
+        public final ForgeConfigSpec.DoubleValue bleedFrequency;
+        public final ForgeConfigSpec.DoubleValue bleedAmount;
         public final ConfigHelper.ConfigObject<NavigableMap<Integer, List<MobEffectData>>> bloodLossEffects;
         public final ConfigHelper.ConfigObject<Map<ResourceLocation, Integer>> batteryCharges;
         private final Map<Item, Integer> parsedBatteryCharges = new HashMap<>();
         public final ConfigHelper.ConfigObject<Map<ResourceLocation, ConsumeType>> bandages;
         private final Map<Item, ConsumeType> parsedBandages = new HashMap<>();
+        public final ForgeConfigSpec.DoubleValue bloodRegenFoodExhaustion;
+        public final ForgeConfigSpec.DoubleValue bloodAnalyzerAnalysisTime;
+        public final ForgeConfigSpec.DoubleValue microscopeAnalysisTime;
 
         Server(ForgeConfigSpec.Builder builder) {
             builder.comment("Server configuration settings")
@@ -58,6 +63,12 @@ public class BloodSystemConfig {
                     .worldRestart()
                     .defineInRange("bloodRegenAmount", 1.0, 0, 100);
 
+            this.bloodRegenFoodExhaustion = builder
+                    .comment("The amount of food exhaustion caused by a passive blood regeneration tick. In vanilla, accumulating 4 food exhaustion will decrease saturation by 1, or food level by 1 if saturation is 0.")
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodRegenFoodExhaustion"))
+                    .worldRestart()
+                    .defineInRange("bloodRegenFoodExhaustion", 6.0, 0, 100);
+
             this.bloodLossWhenTakingDamage = builder
                     .comment("The amount of blood lost when taking a half heart of damage or more.")
                     .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodLossPerDamageTaken"))
@@ -75,6 +86,18 @@ public class BloodSystemConfig {
                     .translation(BloodSystemMod.translationKeySuffixed("configgui.bleedChanceWhenTakingDamageExtra"))
                     .worldRestart()
                     .defineInRange("bleedChanceWhenTakingDamageExtra", 5.0, 0, 100);
+
+            this.bleedFrequency = builder
+                    .comment("The frequency, in seconds, that a Bleeding status effect tick will occur. A value of 0.05 or less will cause blood loss every tick.")
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bleedFrequency"))
+                    .worldRestart()
+                    .defineInRange("bleedFrequency", 30.0, 0, Double.MAX_VALUE);
+
+            this.bleedAmount = builder
+                    .comment("The amount of blood lost during a Bleeding status effect tick.")
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bleedAmount"))
+                    .worldRestart()
+                    .defineInRange("bleedAmount", 1.0, 0, Double.MAX_VALUE);
 
             this.bloodLossEffects = ConfigHelper.defineObject(
                     builder.comment("The status effects to apply when a player's blood level is at or below these percentages.")
@@ -111,6 +134,18 @@ public class BloodSystemConfig {
                             this.put(new ResourceLocation("apocalypsenow:bandage"), ConsumeType.RIGHT_CLICK);
                         }
                     });
+
+            this.bloodAnalyzerAnalysisTime = builder
+                    .comment("The amount of time, in seconds, that it takes for the Blood Analyzer to analyse a blood container.")
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.bloodAnalyzerAnalysisTime"))
+                    .worldRestart()
+                    .defineInRange("bloodAnalyzerAnalysisTime", 120.0, 0, Double.MAX_VALUE);
+
+            this.microscopeAnalysisTime = builder
+                    .comment("The amount of time, in seconds, that it takes for the Microscope to analyse a blood container.")
+                    .translation(BloodSystemMod.translationKeySuffixed("configgui.microscopeAnalysisTime"))
+                    .worldRestart()
+                    .defineInRange("microscopeAnalysisTime", 120.0, 0, Double.MAX_VALUE);
 
             builder.pop();
         }

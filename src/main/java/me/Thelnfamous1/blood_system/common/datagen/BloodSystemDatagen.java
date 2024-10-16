@@ -46,6 +46,7 @@ public class BloodSystemDatagen {
 
                 this.add(ModItems.VEINAMITOL.get().getDescriptionId(), "Veinamitol");
                 this.add(ModItems.NEEDLE.get().getDescriptionId(), "Needle");
+                this.add(ModItems.BLOOD_TEST_KIT.get().getDescriptionId(), "Blood Test Kit");
                 this.add(ModItems.BLOOD_BAG.get().getDescriptionId(), "Blood Bag");
                 this.add(ModItems.BLOOD_BAG_AND_NEEDLE.get().getDescriptionId(), "Blood Bag and Needle");
                 this.add(ModItems.SYRINGE.get().getDescriptionId(), "Syringe");
@@ -74,6 +75,7 @@ public class BloodSystemDatagen {
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
         existingFileHelper.trackGenerated(ModItems.VEINAMITOL.getId(), ITEM_TEXTURE_RESOURCE);
         existingFileHelper.trackGenerated(ModItems.NEEDLE.getId(), ITEM_TEXTURE_RESOURCE);
+        existingFileHelper.trackGenerated(ModItems.BLOOD_TEST_KIT.getId(), ITEM_TEXTURE_RESOURCE);
         trackBloodFillableItemTexture(existingFileHelper, ModItems.BLOOD_BAG);
         trackBloodFillableItemTexture(existingFileHelper, ModItems.BLOOD_BAG_AND_NEEDLE);
         trackBloodFillableItemTexture(existingFileHelper, ModItems.SYRINGE);
@@ -85,6 +87,7 @@ public class BloodSystemDatagen {
             protected void registerModels() {
                 this.basicItem(ModItems.VEINAMITOL.get());
                 this.basicItem(ModItems.NEEDLE.get());
+                this.basicItem(ModItems.BLOOD_TEST_KIT.get());
                 this.bloodFillableItem(ModItems.BLOOD_BAG.get());
                 this.bloodFillableItem(ModItems.BLOOD_BAG_AND_NEEDLE.get());
                 this.bloodFillableItem(ModItems.SYRINGE.get());

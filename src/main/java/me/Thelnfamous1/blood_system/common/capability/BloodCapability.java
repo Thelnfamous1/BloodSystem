@@ -204,6 +204,8 @@ public interface BloodCapability extends INBTSerializable<CompoundTag> {
                             this.gainBlood(bloodRegenAmount);
                             if(DebugFlags.DEBUG_PASSIVE_BLOOD_REGENERATION)
                                 BloodSystemMod.LOGGER.info("{} regenerated {} blood!", this.player, bloodRegenAmount);
+
+                            this.player.causeFoodExhaustion(BloodSystemConfig.SERVER.bloodRegenFoodExhaustion.get().floatValue());
                         }
                     }
                     // add active blood loss effects

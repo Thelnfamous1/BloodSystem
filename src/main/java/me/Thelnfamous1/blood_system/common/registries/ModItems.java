@@ -1,10 +1,7 @@
 package me.Thelnfamous1.blood_system.common.registries;
 
 import me.Thelnfamous1.blood_system.BloodSystemMod;
-import me.Thelnfamous1.blood_system.common.item.BloodBagAndNeedleItem;
-import me.Thelnfamous1.blood_system.common.item.BloodBagItem;
-import me.Thelnfamous1.blood_system.common.item.BloodPillItem;
-import me.Thelnfamous1.blood_system.common.item.BloodSyringeItem;
+import me.Thelnfamous1.blood_system.common.item.*;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
@@ -20,4 +17,5 @@ public class ModItems {
     public static final RegistryObject<Item> BLOOD_BAG = ITEMS.register("blood_bag", () -> new BloodBagItem(new Item.Properties().tab(BloodSystemMod.BLOOD_SYSTEM_TAB)));
     public static final RegistryObject<Item> NEEDLE = ITEMS.register("needle", () -> new Item(new Item.Properties().tab(BloodSystemMod.BLOOD_SYSTEM_TAB)));
     public static final RegistryObject<Item> VEINAMITOL = ITEMS.register("veinamitol", () -> new BloodPillItem(new Item.Properties().tab(BloodSystemMod.BLOOD_SYSTEM_TAB)));
+    public static final RegistryObject<Item> BLOOD_TEST_KIT = ITEMS.register("blood_test_kit", () -> new BloodTestKitItem(new Item.Properties().tab(BloodSystemMod.BLOOD_SYSTEM_TAB)));
 }
