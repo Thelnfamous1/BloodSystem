@@ -6,6 +6,7 @@ import me.Thelnfamous1.blood_system.common.block.entity.BloodAnalyzerBlockEntity
 import me.Thelnfamous1.blood_system.common.block.entity.MicroscopeBlockEntity;
 import me.Thelnfamous1.blood_system.common.capability.BloodType;
 import me.Thelnfamous1.blood_system.common.command.BloodSystemCommands;
+import me.Thelnfamous1.blood_system.common.item.BloodTestKitItem;
 import me.Thelnfamous1.blood_system.common.registries.*;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeProvider;
@@ -70,6 +71,10 @@ public class BloodSystemDatagen {
                 this.add(BloodAnalyzerBlockEntity.START_BUTTON_KEY, "Start");
                 this.add(MicroscopeBlockEntity.NAME_KEY, "Microscope");
                 this.add(MicroscopeBlockEntity.START_BUTTON_KEY, "Start");
+
+                this.add(BloodTestKitItem.NOTHING, "You must be holding a filled blood container.");
+                this.add(BloodTestKitItem.ANALYZED, "%s has already been analyzed.");
+                this.add(BloodTestKitItem.TOOLTIP, "Used to analyze a filled blood container.");
             }
         });
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
